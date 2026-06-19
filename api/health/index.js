@@ -1,5 +1,4 @@
-const { app } = require('@azure/functions')
-const pJson = require('../../../package.json')
+const pJson = require('../../package.json')
 
 const startedAt = Date.now()
 
@@ -13,16 +12,16 @@ function getUptime() {
   return `${d}d ${h}h ${m}m ${s}s`
 }
 
-app.http('health', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'health',
-  handler: async () => ({
-    jsonBody: {
+module.exports = async function (context) {
+  context.res = {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+    body: JSON.stringify({
       status: 'ok',
       version: pJson.version,
       uptime: getUptime(),
       timestamp: new Date().toLocaleTimeString(),
-    },
-  }),
-})
+    }),
+  }
+}
