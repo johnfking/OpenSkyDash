@@ -345,7 +345,7 @@ export default {
                 return;
             }
 
-            const url = `/api-kc2g/api/point_prediction.json?grid=${home.lat},${home.lon}`;
+            const url = `/api/kc2g/point-prediction?grid=${home.lat},${home.lon}`;
             const unit = this.stg?.units?.distance.toLowerCase() === 'km' ? 1 : 0.621371;
 
             try {

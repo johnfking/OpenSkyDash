@@ -1,0 +1,17 @@
+{
+  "name": "OpenSkyDash",
+  "short_name": "SkyDash",
+  "description": "A real-time dashboard for amateur radio.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

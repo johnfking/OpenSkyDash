@@ -13,7 +13,7 @@ const port = process.env.PORT || 5050
 
 app.use(cors())
 
-app.get('/blitz-js', async (req, res) => {
+async function handleBlitzJs(req, res) {
   try {
     const response = await fetch('https://www.blitzortung.org/en/JS/live_lightning_maps.js')
 
@@ -28,7 +28,10 @@ app.get('/blitz-js', async (req, res) => {
   } catch (error) {
     res.status(500).send('Proxy failed to reach Blitzortung')
   }
-})
+}
+
+app.get('/blitz-js', handleBlitzJs)
+app.get('/api/blitz-js', handleBlitzJs)
 
 app.use(express.static(path.join(__dirname, 'dist')))
 
@@ -51,7 +54,7 @@ app.get('/api/health', (req, res) => {
   })
 })
 
-app.get('/api-kc2g/api/point_prediction.json', async (req, res) => {
+async function handleKc2gPointPrediction(req, res) {
   const { grid } = req.query
   // Note the "prop." added to the URL below
   const targetUrl = `https://prop.kc2g.com/api/point_prediction.json?grid=${grid}`
@@ -70,7 +73,10 @@ app.get('/api-kc2g/api/point_prediction.json', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch solar data' })
   }
-})
+}
+
+app.get('/api-kc2g/api/point_prediction.json', handleKc2gPointPrediction)
+app.get('/api/kc2g/point-prediction', handleKc2gPointPrediction)
 
 app.get(/^(?!\/(api|blitz-js|api-kc2g)).+/, (req, res) => {
   const indexPath = path.join(__dirname, 'dist', 'index.html')

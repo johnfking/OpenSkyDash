@@ -232,6 +232,43 @@ Displays the three key solar indices that affect HF radio propagation. If you op
 
 ## Deployment
 
+### Azure Static Web Apps
+
+This fork can run as a hosted phone-friendly web app without a Raspberry Pi. The Vue app is deployed as static files, and the small proxy endpoints run as managed Azure Functions under `/api`.
+
+Azure Static Web Apps Free is a good fit for personal SkyDash use:
+
+- Static hosting, GitHub deployment, custom domains, and SSL certificates are included on the Free plan.
+- Managed Azure Functions on the Consumption plan include a monthly free grant that is far above normal personal dashboard traffic.
+- Settings still live in the browser, so each phone or browser keeps its own station configuration.
+
+#### One-time Azure setup
+
+1. Fork this repository.
+2. In the Azure portal, create a **Static Web App**.
+3. Choose the fork as the GitHub source.
+4. Use these build settings:
+   - App location: `/`
+   - API location: `api`
+   - Output location: `dist`
+5. Add the generated deployment token as the GitHub secret `AZURE_STATIC_WEB_APPS_API_TOKEN` if Azure does not create it automatically.
+6. Push to `main` and let GitHub Actions deploy.
+
+#### Local Azure-style preview
+
+```bash
+npm install
+npm --prefix api install
+npm run build
+npm run azure:dev
+```
+
+The hosted app uses these API routes:
+
+- `/api/health`
+- `/api/blitz-js`
+- `/api/kc2g/point-prediction?grid=<lat>,<lon>`
+
 ### Raspberry Pi
 
 One-line install for Raspberry Pi (3B, 3B+, 4, 5). Supports both graphical and headless operation.

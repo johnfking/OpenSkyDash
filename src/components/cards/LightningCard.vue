@@ -301,7 +301,7 @@ export default {
 
             try {
 
-                const response = await fetch('/blitz-js');
+                const response = await fetch('/api/blitz-js');
                 const scriptText = await response.text();
                 const keyMatch = scriptText.match(/var\s+key\s*=\s*(\d+)/);
 
