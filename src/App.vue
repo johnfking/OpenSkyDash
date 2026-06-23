@@ -1,31 +1,30 @@
 <template>
-  <v-app>
-    <v-app-bar color="#1e3838" density="compact">
-      <v-app-bar-title class="text-brown-lighten-4"><v-icon icon="mdi-monitor-dashboard" color="primary"
+  <v-app class="sky-app">
+    <v-app-bar class="top-bar" density="compact" flat>
+      <v-app-bar-title class="app-title"><v-icon icon="mdi-monitor-dashboard" color="cyan-lighten-2"
           size="small"></v-icon> {{ stg?.ui?.appName || 'SkyDash' }}</v-app-bar-title>
       <v-spacer></v-spacer>
-      <div class="pa-4 text-h6 text-brown-lighten-4">{{ currentTime }}</div>
+      <div class="clock-chip">{{ currentTime }}</div>
     </v-app-bar>
 
-    <v-main class="d-flex align-start justify-center bg-grey-darken-5 rounded-lg mt-4">
-      <v-card minwidth="300" maxwidth="300" class="mx-auto border-sm" elevation="24">
+    <v-main class="dashboard-main">
+      <v-card class="dashboard-shell mx-auto" elevation="0">
 
-        <v-tabs v-model="stg.ui.activeTab" bg-color="#1a1a1a" color="grey-darken-1" grow density="compact">
-          <v-tab value="weather">
+        <v-tabs v-model="stg.ui.activeTab" class="dashboard-tabs" selected-class="active-tab" grow density="compact">
+          <v-tab value="weather" class="tab-button">
             <template v-slot:prepend>
-              <v-icon :icon="shared.weather.icon" color="blue" size="small" class="mr-1"></v-icon>
+              <v-icon :icon="shared.weather.icon" color="cyan-lighten-2" size="small" class="mr-1"></v-icon>
             </template>
           </v-tab>
-          <v-tab value="lightning"><v-icon icon="mdi-flash" color="amber" size="small" class="mr-1"
+          <v-tab value="lightning" class="tab-button"><v-icon icon="mdi-flash" color="amber-lighten-2" size="small" class="mr-1"
               :class="{ 'pulsing-icon': (stg?.lightning?.currentStorm?.frequency > 0) }">
             </v-icon></v-tab>
-          <v-tab value="solar"><v-icon icon="mdi-sun-wireless" color="error" size="small" class="mr-1"
+          <v-tab value="solar" class="tab-button"><v-icon icon="mdi-sun-wireless" color="orange-lighten-2" size="small" class="mr-1"
               :class="{ 'pulsing-icon-solar': (stg?.solar?.current?.scales?.current.g > 0 || stg?.solar?.current?.scales?.current?.r > 0 || stg?.solar?.current?.scales?.current?.s > 0) }">
             </v-icon></v-tab>
-          <v-tab value="settings"><v-icon icon="mdi-cog" color="grey" size="small">
+          <v-tab value="settings" class="tab-button"><v-icon icon="mdi-cog" color="grey-lighten-2" size="small">
             </v-icon></v-tab>
         </v-tabs>
-        <v-divider></v-divider>
         <v-window v-model="stg.ui.activeTab" :touch="false" :transition="false">
           <v-window-item value="weather" eager>
             <WeatherCard v-show="stg.ui.activeTab === 'weather'" :stg="stg" />
@@ -200,99 +199,70 @@ export default {
 </script>
 
 <style scoped>
-:root {
-  --bg-color: #ffffff;
-  --text-color: #000000;
+.sky-app {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.2), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(249, 115, 22, 0.16), transparent 28%),
+    linear-gradient(180deg, #0f172a 0%, #111827 48%, #0b1120 100%);
+  color: #e5eefb;
 }
 
-html.dark {
-  --bg-color: #1a1a1a;
-  --text-color: #ffffff;
+.top-bar {
+  background: rgba(15, 23, 42, 0.76) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(14px);
 }
 
-body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
+.app-title {
+  color: #e2e8f0;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
-.border-white-op {
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 100%;
-}
-
-.metric-cell {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.metric-cell:nth-child(odd) {
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.label {
-  color: #94a3b8;
-  font-size: 0.65rem;
+.clock-chip {
+  margin-right: 14px;
+  padding: 4px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+  font-size: 0.86rem;
   font-weight: 700;
-  text-transform: uppercase;
 }
 
-.val {
-  font-size: 0.85rem;
-  color: #f8fafc;
-  font-weight: 600;
-}
-
-
-.forecast-body :deep(.v-expansion-panel-text__wrapper) {
-  padding: 8px 12px !important;
-}
-
-.forecast-row {
+.dashboard-main {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.75rem;
-
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 66px 12px 28px;
 }
 
-.day-label {
-  width: 35px;
-  font-weight: 600;
+.dashboard-shell {
+  width: min(352px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.38);
 }
 
-.temp-range {
-  flex-grow: 1;
-  text-align: center;
-  font-family: monospace;
+.dashboard-tabs {
+  margin: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.36);
+  overflow: hidden;
 }
 
-.precip {
-  width: 45px;
-  text-align: right;
-}
-
-.custom-tabs {
-  max-width: 300px;
-}
-
-.v-tab {
+.tab-button {
   min-width: 0;
+  color: #94a3b8;
+}
 
-  padding: 0 4px;
-
+:deep(.active-tab) {
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe !important;
 }
 
 .pulsing-icon {

@@ -1,6 +1,5 @@
 <template>
-    <v-sheet value="solar" transition="fade-transition" flat class="solarCard mx-auto lightning-card bg-grey-darken-4"
-        style="max-width: 300px; min-width:300px">
+    <v-sheet value="solar" transition="fade-transition" flat class="solarCard mx-auto station-card">
         <div class="d-flex justify-space-between align-center header-bg px-3 py-2"
             style="position: relative; z-index: 10;">
             <div class="d-flex align-center">
@@ -8,7 +7,7 @@
                 <div class="d-flex flex-column align-start ml-2">
                     <span class="text-subtitle-1 font-weight-bold stat-value"
                         style="line-height: 1.0rem; font-size: 1.2rem;">Solar</span>
-                    <span :key="stg?.solar?.current?.ionosphere?.ts" class="text-grey-darken-1"
+                    <span :key="stg?.solar?.current?.ionosphere?.ts" class="card-source-text"
                         style="font-size: 0.55rem;">NOAA.org / KC2G.com {{
                             stg?.solar?.current?.ionosphere?.ts }}</span>
                 </div>
@@ -475,14 +474,31 @@ export default {
 
 <style scoped>
 .solarCard {
-    background-color: var(--surface-color);
+    color: #e5eefb;
+}
 
-    color: var(--text-primary);
-    border: 1px solid var(--text-secondary);
+.station-card {
+    width: 100%;
+    padding: 4px 14px 14px;
+    background:
+        linear-gradient(180deg, rgba(249, 115, 22, 0.12), transparent 34%),
+        rgba(15, 23, 42, 0.78);
+}
+
+.header-bg {
+    margin: 0 0 10px;
+    padding: 12px !important;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.32);
+}
+
+.card-source-text {
+    color: #8fa3b8;
 }
 
 .border-white-op {
-    border-top-color: var(--divider-color) !important;
+    border-top-color: rgba(148, 163, 184, 0.14) !important;
     border-top-width: 1px !important;
     border-left: none;
     border-right: none;
@@ -495,7 +511,7 @@ export default {
 }
 
 .stat-value {
-    color: #D7CCC8;
+    color: #f8fafc;
     font-weight: bold;
 }
 
@@ -506,7 +522,7 @@ export default {
 }
 
 .ionosphere-value {
-    color: #D7CCC8 !important;
+    color: #e2e8f0 !important;
     font-weight: bold;
 }
 
@@ -530,29 +546,29 @@ export default {
 }
 
 .text-caption {
-    color: #D7CCC8
+    color: #cbd5e1
 }
 
 .val {
     font-size: 0.80rem;
-    color: #D7CCC8;
+    color: #e2e8f0;
     font-weight: 600;
     font-family: 'Roboto Mono', monospace;
 }
 
 .v-progress-linear {
-    background-color: #D7CCC8 !important;
+    background-color: rgba(148, 163, 184, 0.3) !important;
     overflow: hidden;
 }
 
 .prob-label {
-    color: #D7CCC8 !important;
+    color: #cbd5e1 !important;
     font-weight: 600;
     width: 65px;
 }
 
 .prob-percent {
-    color: #D7CCC8 !important;
+    color: #cbd5e1 !important;
     width: 35px;
     text-align: right;
 }

@@ -1,6 +1,6 @@
 <template>
 
-    <v-sheet class="mx-auto lightning-card bg-grey-darken-4" style="max-width: 300px; min-width:300px">
+    <v-sheet class="mx-auto lightning-card station-card">
         <div class="d-flex justify-space-between align-center header-bg px-3 py-2"
             style="position: relative; z-index: 10; ">
             <div class="d-flex align-center">
@@ -8,9 +8,9 @@
                     :class="{ 'pulsing-icon': (stg.lightning.currentStorm.frequency > 0) }">
                 </v-icon>
                 <div class="d-flex flex-column align-start">
-                    <span class="text-subtitle-1 font-weight-bold text-brown-lighten-4"
+                    <span class="text-subtitle-1 font-weight-bold card-title-text"
                         style="line-height: 1.2rem;">Lightning</span>
-                    <span class="text-grey-darken-1" style="font-size: 0.55rem;">Blitzortung.org</span>
+                    <span class="card-source-text" style="font-size: 0.55rem;">Blitzortung.org</span>
                 </div>
             </div>
 
@@ -72,7 +72,7 @@
                     <div class="d-flex flex-column align-center">
 
                         <div class="d-flex align-baseline">
-                            <div class="display-value text-brown-lighten-4">{{
+                            <div class="display-value card-title-text">{{
                                 convertedDistance(this.stg?.lightning?.currentStorm?.distance) }}</div>
                             <div class="unit-text ml-1">{{ stg.units.distance }}</div>
                         </div>
@@ -85,7 +85,7 @@
                     <div class="text-right d-flex flex-column align-center" style="min-width: 100px;">
                         <v-icon icon="mdi-navigation"
                             :style="{ transform: `rotate(${stg.lightning.currentStorm?.bearing || 0}deg)`, transition: 'transform 0.5s' }"
-                            size="38" color="brown-lighten-4"></v-icon>
+                            size="38" color="slate-lighten-2"></v-icon>
                         <div class="unit-text ml-1" style="font-size: 1.0rem;">
                             {{ getDir(stg.lightning.currentStorm?.bearing) }}
                         </div>
@@ -925,20 +925,41 @@ export default {
 
 <style scoped>
 .lightning-card {
-    border-radius: 0px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 0;
+}
+
+.station-card {
+    width: 100%;
+    padding-top: 4px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(245, 158, 11, 0.12), transparent 34%),
+        rgba(15, 23, 42, 0.78);
+    color: #e5eefb;
 }
 
 .header-bg {
-    background: rgba(0, 0, 0, 0.3);
+    margin: 0 14px 10px;
+    padding: 12px !important;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.32);
+}
+
+.card-title-text {
+    color: #f8fafc !important;
+}
+
+.card-source-text {
+    color: #8fa3b8;
 }
 
 .footer-bg {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(2, 6, 23, 0.38);
 }
 
 .border-top-dim {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .border-bottom-dim {
@@ -954,7 +975,7 @@ export default {
 
 .unit-text {
     font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: #94a3b8;
 }
 
 .danger-banner {

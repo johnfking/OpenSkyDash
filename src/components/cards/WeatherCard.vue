@@ -1,33 +1,31 @@
 <template>
-    <v-sheet value="weather" transition="fade-transition" flat class="mx-auto lightning-card bg-grey-darken-4"
-        style="max-width: 300px; min-width:300px">
+    <v-sheet value="weather" transition="fade-transition" flat class="weather-card mx-auto">
         <div v-if="stg.weather.current">
 
             <div v-if="stg.weather.current && stg.weather.current.temp !== undefined"
-                class="d-flex justify-space-between align-start header-bg px-3 py-2 mt-2"
+                class="weather-hero"
                 style="position: relative; z-index: 10;">
 
-                <div class="d-flex align-start ga-2">
-                    <!-- The Icon -->
-                    <v-icon :icon="stg.weather.current.icon || 'mdi-weather-cloudy'" color="blue-lighten-3"
-                        size="x-large" class="mt-n1"></v-icon>
+                <div class="d-flex align-start ga-3">
+                    <div class="weather-icon-wrap">
+                        <v-icon :icon="stg.weather.current.icon || 'mdi-weather-cloudy'" color="cyan-lighten-2"
+                            size="34"></v-icon>
+                    </div>
 
                     <!-- Wrap both lines in a column div to stack them -->
                     <div class="d-flex flex-column">
                         <!-- Top Line: Condition -->
-                        <span class="text-subtitle-1 font-weight-bold text-brown-lighten-4"
-                            style="font-size: 1.2rem; line-height: 1.1;">
+                        <span class="condition-text">
                             {{ stg.weather.current.conditionText }}
                         </span>
 
-                        <span class="text-grey-darken-1" style="font-size: 0.55rem; line-height: 1;">
+                        <span class="source-text">
                             Open-Meteo.com {{ stg.weather.current.lastUpdate }}
                         </span>
                     </div>
                 </div>
 
-                <div class="font-weight-bold text-brown-lighten-4"
-                    style="font-size: 2.0rem; line-height: 1; margin-top: -1px;">
+                <div class="temp-readout">
                     {{ Math.round(stg.weather.current.temp) }}°{{ stg.units.temperature.toUpperCase() }}
                 </div>
 
@@ -37,16 +35,16 @@
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
             </div>
 
-            <div class="d-flex justify-center ga-4 mb-4 text-caption text-grey-lighten-1">
+            <div class="summary-strip">
                 <span>Feels like {{ Math.round(stg.weather.current.feelsLike) }}°</span>
                 <span class="text-orange-lighten-2">▲{{ Math.round(stg.weather.current.high) }}°</span>
                 <span class="text-blue-lighten-2">▼{{ Math.round(stg.weather.current.low) }}°</span>
             </div>
 
-            <div class=" metrics-grid border-t border-white-op ml-7">
-                <div class="metric-cell border-r border-white-op">
+            <div class="metrics-grid">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-weather-windy-variant" v-tooltip:top="'Current Wind'"
-                            color="blue-lighten-3" size="large"></v-icon></span>
+                            color="cyan-lighten-2" size="large"></v-icon></span>
                     <span class="val mr-2">{{ stg.weather.current.windDir }} <strong>{{ stg.weather.current.windSpeed }}
                             {{ stg.units.distance === 'mi' ? 'mph' : 'km' }}</strong></span>
                 </div>
@@ -56,65 +54,64 @@
                     <span class="val"><strong>{{ stg.weather.current.humidity }}%</strong></span>
                 </div>
 
-                <div class="metric-cell border-t border-r border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-windsock" v-tooltip:top="'Current Gusts'"
                             color="teal-lighten-1" size="large"></v-icon></span>
                     <span class="val"><strong>{{ stg.weather.current.gusts }} {{
                         stg.units.distance === 'mi' ? 'mph' : 'km' }}</strong></span>
                 </div>
-                <div class="metric-cell border-t border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-water-thermometer" v-tooltip:top="'Current Dew Point'"
                             color="cyan-lighten-3" size="large"></v-icon></span>
                     <span class="val"><strong>{{ Math.round(stg.weather.current.dewPoint) }}°{{
                         stg.units.temperature.toUpperCase() }}</strong></span>
                 </div>
-                <div class="metric-cell border-t border-r border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-gauge" v-tooltip:top="'Current Air Pressure'"
                             color="green-accent-4" size="large"></v-icon></span>
                     <span class="val"><strong>{{ stg.weather.current.pressure }}</strong> <small class="text-caption">{{
                         stg.units.pressure ===
                             'inch' ? 'in' : 'mb' }}</small></span>
                 </div>
-                <div class="metric-cell border-t border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-clouds" v-tooltip:top="'Current Cloud Cover'"
                             color="indigo-lighten-3" size="large"></v-icon></span>
                     <span class="val"><strong>{{ stg.weather.current.clouds }}%</strong></span>
                 </div>
 
-                <div class="metric-cell border-t border-r border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-eye" v-tooltip:top="'Current Visibility'"
-                            color="brown-lighten-2" size="large"></v-icon></span>
+                            color="blue-grey-lighten-2" size="large"></v-icon></span>
                     <span class="val"><strong>{{ stg.weather.current.visibility }} {{ stg.units.distance
                             }}</strong></span>
                 </div>
-                <div class="metric-cell border-t border-white-op">
+                <div class="metric-cell">
                     <span class="label"><v-icon icon="mdi-sun-wireless" v-tooltip:top="'Current UV Exposure'"
-                            color="amber-lighten-4" size="large"></v-icon></span>
+                            color="amber-lighten-3" size="large"></v-icon></span>
                     <span class="val"><strong>{{ stg.weather.current.uv }} UV</strong></span>
                 </div>
             </div>
 
             <v-row v-if="stg.weather.forecast && stg.weather.forecast.length > 0"
-                class="mt-3 pt-2 pb-3 mx-0 border-t-sm border-grey-darken-3" no-gutters>
+                class="forecast-grid mx-0" no-gutters>
                 <v-col v-for="day in stg.weather.forecast" :key="day.name" cols="4" class="text-center">
-                    <div class="d-flex flex-column align-center px-1">
-                        <span class="text-caption font-weight-medium text-grey-lighten-1 mb-1">
+                    <div class="forecast-tile">
+                        <span class="forecast-day">
                             {{ day.name }}
                         </span>
 
                         <v-icon
                             :icon="(day.icon === 'mdi-weather-snowy' && day.high > 40) ? 'mdi-weather-pour' : day.icon"
-                            size="small" color="blue-lighten-4" class="ma-0">
+                            size="small" color="cyan-lighten-2" class="ma-0">
                         </v-icon>
 
-                        <div class="text-caption font-weight-bold text-brown-lighten-4 mt-1 mb-0.5">
+                        <div class="forecast-temp">
                             {{ Math.round(day.high) }}°<span class="text-grey-darken-1 font-weight-regular">/{{
                                 Math.round(day.low) }}°</span>
                         </div>
 
-                        <div class="d-flex align-center justify-center mt-0.5 text-grey-lighten-1"
-                            style="font-size: 0.9rem; line-height: 1;">
-                            <v-icon size="10" color="blue-lighten-4" class="mr-0.5">mdi-water</v-icon>
+                        <div class="forecast-precip">
+                            <v-icon size="10" color="cyan-lighten-2" class="mr-0.5">mdi-water</v-icon>
                             {{ day.precip }}%
                         </div>
                     </div>
@@ -352,66 +349,158 @@ export default {
 </script>
 
 <style scoped>
-.border-white-op {
-    border-color: rgba(255, 255, 255, 0.1) !important;
+.weather-card {
+    width: 100%;
+    padding: 0 14px 16px;
+    background:
+        linear-gradient(180deg, rgba(14, 165, 233, 0.12), transparent 34%),
+        rgba(15, 23, 42, 0.78);
+    color: #e5eefb;
+}
+
+.weather-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 2px 0 12px;
+    padding: 18px 4px 4px;
+}
+
+.weather-icon-wrap {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgba(125, 211, 252, 0.22);
+    border-radius: 16px;
+    background: rgba(8, 47, 73, 0.48);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.condition-text {
+    color: #f8fafc;
+    font-size: 1.08rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.source-text {
+    margin-top: 4px;
+    color: #8fa3b8;
+    font-size: 0.66rem;
+    line-height: 1;
+}
+
+.temp-readout {
+    color: #f8fafc;
+    font-size: 2.32rem;
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 1;
+}
+
+.summary-strip {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 8px 10px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.28);
+    color: #cbd5e1;
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+
+.high-temp {
+    color: #fdba74;
+}
+
+.low-temp {
+    color: #93c5fd;
 }
 
 .metrics-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 .metric-cell {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 4px 8px;
+    min-height: 52px;
+    padding: 8px 10px;
     gap: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.64);
 }
 
 .metric-cell .label {
     display: flex;
-    min-width: 40px;
+    min-width: 30px;
     justify-content: center;
 }
 
 
 .val {
-    font-size: 0.80rem;
-    color: #D7CCC8;
-    font-weight: 600;
-    font-family: 'Roboto Mono', monospace;
-}
-
-.forecast-body :deep(.v-expansion-panel-text__wrapper) {
-    padding: 8px 12px !important;
-}
-
-.forecast-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2px 2px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 1.0rem;
-}
-
-.day-label {
-    color: #D7CCC8;
-    width: 45px;
+    color: #e2e8f0;
+    font-size: 0.76rem;
     font-weight: 700;
     font-family: 'Roboto Mono', monospace;
 }
 
-.temp-range {
-    flex-grow: 1;
-    text-align: center;
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 500;
+.forecast-grid {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
-.precip {
-    width: 60px;
-    text-align: right;
+.forecast-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 94px;
+    margin: 0 4px;
+    padding: 10px 4px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.24);
+}
+
+.forecast-day {
+    max-width: 100%;
+    margin-bottom: 5px;
+    overflow: hidden;
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.forecast-temp {
+    margin-top: 5px;
+    color: #f8fafc;
+    font-size: 0.75rem;
+    font-weight: 900;
+}
+
+.forecast-temp span,
+.forecast-precip {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.forecast-precip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    font-size: 0.72rem;
+    line-height: 1;
 }
 </style>
