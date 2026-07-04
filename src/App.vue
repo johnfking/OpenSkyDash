@@ -24,7 +24,7 @@
             </div>
             <div class="badge-cell">
               <span>GRID</span>
-              <strong>{{ stg.ui.grid || 'DM04' }}</strong>
+              <strong>{{ displayGrid }}</strong>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ export default {
     if (!masterState.weather.current) masterState.weather.current = {};
     if (!masterState.ui) masterState.ui = {};
     if (!masterState.ui.callsign) masterState.ui.callsign = 'W8BE';
-    if (!masterState.ui.grid) masterState.ui.grid = 'DM04';
+    if (!masterState.ui.grid) masterState.ui.grid = 'DM04TE';
 
     return {
       stg: masterState,
@@ -163,6 +163,11 @@ export default {
         second: '2-digit',
         timeZoneName: 'short',
       });
+    },
+  },
+  computed: {
+    displayGrid() {
+      return String(this.stg.ui.grid || 'DM04').slice(0, 4).toUpperCase();
     },
   },
   watch: {

@@ -43,15 +43,20 @@
     </section>
 
     <section class="config-section">
-      <h3>STATION LOCATION</h3>
+      <div class="section-heading">
+        <h3>STATION LOCATION</h3>
+        <button type="button" class="locate-button" :disabled="locating" @click="locateStation">
+          {{ locating ? 'LOCATING' : 'LOCATE' }}
+        </button>
+      </div>
       <div class="field-grid">
         <label>
           <span>CALLSIGN</span>
           <input v-model.trim="stg.ui.callsign" type="text">
         </label>
         <label>
-          <span>GRID</span>
-          <input v-model.trim="stg.ui.grid" type="text">
+          <span>GRID 6</span>
+          <input :value="gridValue" type="text" maxlength="6" @input="updateGrid">
         </label>
         <label>
           <span>LATITUDE</span>
@@ -62,6 +67,7 @@
           <input v-model.number="stg.lightning.homeLocation.lon" type="number" step="0.0001" @change="normalizeLocation">
         </label>
       </div>
+      <p class="locate-status" :class="locateStatusType">{{ locateStatus }}</p>
     </section>
 
     <section class="config-section">
@@ -103,13 +109,90 @@ export default {
       required: true,
     },
   },
+  data() {
+    return {
+      locating: false,
+      locateStatus: 'GPS READY · HEADER DISPLAYS 4-CHAR GRID',
+      locateStatusType: 'ready',
+    };
+  },
+  computed: {
+    gridValue() {
+      return String(this.stg.ui.grid || '').toUpperCase();
+    },
+  },
   methods: {
+    updateGrid(event) {
+      this.stg.ui.grid = String(event.target.value || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase();
+    },
     normalizeLocation() {
       const lat = parseFloat(this.stg.lightning.homeLocation.lat);
       const lon = parseFloat(this.stg.lightning.homeLocation.lon);
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
       this.stg.lightning.homeLocation.lat = lat;
       this.stg.lightning.homeLocation.lon = lon;
+    },
+    locateStation() {
+      if (!navigator.geolocation) {
+        this.locateStatus = 'GPS UNAVAILABLE · BROWSER DOES NOT SUPPORT LOCATION';
+        this.locateStatusType = 'error';
+        return;
+      }
+
+      this.locating = true;
+      this.locateStatus = 'GPS QUERY · WAITING FOR PERMISSION';
+      this.locateStatusType = 'pending';
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = Number(position.coords.latitude.toFixed(4));
+          const lon = Number(position.coords.longitude.toFixed(4));
+          const grid = this.latLonToGrid(lat, lon);
+
+          this.stg.lightning.homeLocation.lat = lat;
+          this.stg.lightning.homeLocation.lon = lon;
+          this.stg.ui.grid = grid;
+          this.locateStatus = `GPS FIX · ${lat.toFixed(4)}, ${lon.toFixed(4)} · ${grid}`;
+          this.locateStatusType = 'ready';
+          this.locating = false;
+        },
+        (error) => {
+          const messages = {
+            1: 'GPS DENIED · LOCATION PERMISSION BLOCKED',
+            2: 'GPS UNAVAILABLE · POSITION NOT FOUND',
+            3: 'GPS TIMEOUT · TRY AGAIN',
+          };
+          this.locateStatus = messages[error.code] || 'GPS ERROR · LOCATION FAILED';
+          this.locateStatusType = 'error';
+          this.locating = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 300000,
+        },
+      );
+    },
+    latLonToGrid(lat, lon) {
+      const clampedLat = Math.max(-90, Math.min(89.999999, Number(lat)));
+      const normalizedLon = ((((Number(lon) + 180) % 360) + 360) % 360);
+      const adjLat = clampedLat + 90;
+
+      const fieldLon = Math.floor(normalizedLon / 20);
+      const fieldLat = Math.floor(adjLat / 10);
+      const squareLon = Math.floor((normalizedLon % 20) / 2);
+      const squareLat = Math.floor(adjLat % 10);
+      const subsquareLon = Math.floor((normalizedLon % 2) * 12);
+      const subsquareLat = Math.floor((adjLat % 1) * 24);
+
+      return [
+        String.fromCharCode(65 + fieldLon),
+        String.fromCharCode(65 + fieldLat),
+        squareLon,
+        squareLat,
+        String.fromCharCode(65 + subsquareLon),
+        String.fromCharCode(65 + subsquareLat),
+      ].join('');
     },
     exportToDisk() {
       try {
@@ -236,6 +319,14 @@ h2 {
   padding: 14px 16px 0;
 }
 
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .config-section h3 {
   margin: 0 0 10px;
   color: #877c68;
@@ -243,6 +334,55 @@ h2 {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .24em;
+}
+
+.section-heading h3 {
+  margin-bottom: 0;
+}
+
+.locate-button {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid #4a3f2c;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #2a2418, #181309);
+  color: #c9b89a;
+  cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+
+.locate-button:hover:not(:disabled) {
+  border-color: #ffb64d;
+  color: #ffce9a;
+}
+
+.locate-button:disabled {
+  cursor: wait;
+  opacity: .68;
+}
+
+.locate-status {
+  margin: 9px 0 0;
+  color: #8a7f66;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+}
+
+.locate-status.ready {
+  color: #9cd67f;
+}
+
+.locate-status.pending {
+  color: #f0c04a;
+}
+
+.locate-status.error {
+  color: #ec5a3c;
 }
 
 .toggle-row {

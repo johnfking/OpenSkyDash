@@ -14,7 +14,7 @@
       <section class="weather-hero">
         <div>
           <strong>{{ conditionText }}</strong>
-          <span>{{ stg.ui.callsign || 'STATION' }} · {{ stg.ui.grid || 'DM04' }}</span>
+          <span>{{ stg.ui.callsign || 'STATION' }} · {{ displayGrid }}</span>
         </div>
         <div class="temp-readout">{{ Math.round(stg.weather.current.temp || 0) }}°{{ tempUnit }}</div>
       </section>
@@ -108,6 +108,9 @@ export default {
     },
     conditionText() {
       return String(this.stg.weather.current.conditionText || 'MONITORING').toUpperCase();
+    },
+    displayGrid() {
+      return String(this.stg.ui.grid || 'DM04').slice(0, 4).toUpperCase();
     },
     metrics() {
       const current = this.stg.weather.current;

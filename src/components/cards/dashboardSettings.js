@@ -91,7 +91,7 @@ const defaultSettings = reactive({
     
     appName: 'SkyDash',
     callsign: 'W8BE',
-    grid: 'DM04',
+    grid: 'DM04TE',
   },
 })
 
