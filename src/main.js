@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { registerPlugins } from './plugins'
+import './assets/main.css'
 
 if (import.meta.env.PROD) {
   console.log = () => {}

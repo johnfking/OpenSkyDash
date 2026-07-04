@@ -1,342 +1,370 @@
 <template>
-    <v-card flat class="mx-auto" style="display: block;" bg-color="transparent" variant="flat" height="fit-content">
-        <div class="d-flex flex-column ga-2 pb-2">
+  <article class="instrument-panel settings-card">
+    <header class="panel-header">
+      <div class="title-wrap">
+        <span class="led config-led"></span>
+        <div>
+          <h2>CONFIG</h2>
+          <p>STATION SETUP</p>
         </div>
-        <v-tabs v-model="settingsView" align-tabs="center">
-            <v-tab color="#54b6b2" value="innerTab">
-                <v-icon start icon="mdi-cog"></v-icon> General
-            </v-tab>
-            <v-tab color="orange-darken-2" value="lightning">
-                <v-icon start icon="mdi-tune"></v-icon> Lightning
-            </v-tab>
-        </v-tabs>
+      </div>
+    </header>
 
-        <v-divider></v-divider>
+    <section class="config-section">
+      <h3>UNITS</h3>
+      <div class="toggle-row">
+        <span>DISTANCE</span>
+        <div class="segmented">
+          <button type="button" :class="{ selected: stg.units.distance === 'mi' }" @click="stg.units.distance = 'mi'">MI</button>
+          <button type="button" :class="{ selected: stg.units.distance === 'km' }" @click="stg.units.distance = 'km'">KM</button>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span>TEMP</span>
+        <div class="segmented">
+          <button type="button" :class="{ selected: stg.units.temperature === 'f' }" @click="stg.units.temperature = 'f'">°F</button>
+          <button type="button" :class="{ selected: stg.units.temperature === 'c' }" @click="stg.units.temperature = 'c'">°C</button>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span>PRESSURE</span>
+        <div class="segmented">
+          <button type="button" :class="{ selected: stg.units.pressure === 'inch' }" @click="stg.units.pressure = 'inch'">IN</button>
+          <button type="button" :class="{ selected: stg.units.pressure === 'mb' }" @click="stg.units.pressure = 'mb'">MB</button>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span>TIME</span>
+        <div class="segmented">
+          <button type="button" :class="{ selected: stg.units.timeFormat === '12' }" @click="stg.units.timeFormat = '12'">12H</button>
+          <button type="button" :class="{ selected: stg.units.timeFormat === '24' }" @click="stg.units.timeFormat = '24'">24H</button>
+        </div>
+      </div>
+    </section>
 
-        <v-card-text class="pb-0 d-block">
-            <v-window v-model="settingsView" style="width: 300px;" height="auto" continuous>
+    <section class="config-section">
+      <h3>STATION LOCATION</h3>
+      <div class="field-grid">
+        <label>
+          <span>CALLSIGN</span>
+          <input v-model.trim="stg.ui.callsign" type="text">
+        </label>
+        <label>
+          <span>GRID</span>
+          <input v-model.trim="stg.ui.grid" type="text">
+        </label>
+        <label>
+          <span>LATITUDE</span>
+          <input v-model.number="stg.lightning.homeLocation.lat" type="number" step="0.0001" @change="normalizeLocation">
+        </label>
+        <label>
+          <span>LONGITUDE</span>
+          <input v-model.number="stg.lightning.homeLocation.lon" type="number" step="0.0001" @change="normalizeLocation">
+        </label>
+      </div>
+    </section>
 
-                <v-window-item value="innerTab" style="overflow-y: auto;">
-                    <div class="text-brown-lighten-4 d-flex align-center mt-2">
-                        <v-text-field v-model="stg.ui.appName" label="Profile" density="compact" variant="outlined"
-                            @keydown.enter.prevent="updateLocation" @change="updateLocation"></v-text-field>
-                    </div>
+    <section class="config-section">
+      <h3>LIGHTNING</h3>
+      <div class="field-grid lightning-grid">
+        <label>
+          <span>AREA</span>
+          <input v-model.number="stg.lightning.searchRadius" type="number" min="1">
+        </label>
+        <label>
+          <span>ALERT</span>
+          <input v-model.number="stg.lightning.alertThreshold" type="number" min="1">
+        </label>
+        <label>
+          <span>RESET</span>
+          <input v-model.number="stg.lightning.resetTime" type="number" min="1">
+        </label>
+        <label>
+          <span>SENSITIVITY</span>
+          <input v-model.number="stg.lightning.sensitivity" type="number" min="0.5" step="0.5">
+        </label>
+      </div>
+    </section>
 
-                    <div class="text-subtitle-2 mb-1 text-secondary d-flex align-center">
-                        <v-icon color="#d9d2e9" class="mr-2" size="small">mdi-ruler</v-icon>
-                        <span>Measurement Units</span>
-                    </div>
-
-                    <v-row align="center" no-gutters class="mb-4 px-2">
-                        <v-col cols="4">
-                            <span class="text-body-2 text-grey-lighten-1">Distance</span>
-                        </v-col>
-                        <v-col cols="4" class="d-flex justify-end">
-                            <v-btn-toggle v-model="stg.units.distance" @update:model-value="changeDistanceUnit"
-                                mandatory color="blue-darken-2" density="compact" class="unit-toggle-group">
-                                <v-btn value="mi" size="small" class="px-4">Mi</v-btn>
-                                <v-btn value="km" size="small" class="px-4">Km</v-btn>
-                            </v-btn-toggle>
-                        </v-col>
-                    </v-row>
-
-                    <v-row align="center" no-gutters class="mb-6 px-2">
-                        <v-col cols="4">
-                            <span class="text-body-2 text-grey-lighten-1">Pressure</span>
-                        </v-col>
-                        <v-col cols="4" class="d-flex justify-end">
-                            <v-btn-toggle v-model="stg.units.pressure" mandatory color="blue-darken-2" density="compact"
-                                @update:model-value="updateLocation" class="unit-toggle-group">
-                                <v-btn value="mb" size="small" class="px-4">mb</v-btn>
-                                <v-btn value="inch" size="small" class="px-4">in</v-btn>
-                            </v-btn-toggle>
-                        </v-col>
-                    </v-row>
-
-                    <v-row align="center" no-gutters class="mb-6 px-2">
-                        <v-col cols="4">
-                            <span class="text-body-2 text-grey-lighten-1">Temperature</span>
-                        </v-col>
-                        <v-col cols="4" class="d-flex justify-end">
-                            <v-btn-toggle v-model="stg.units.temperature" mandatory color="blue-darken-2"
-                                density="compact" @update:model-value="updateLocation" class="unit-toggle-group">
-                                <v-btn value="f" size="small" class="px-4">F</v-btn>
-                                <v-btn value="c" size="small" class="px-4">C</v-btn>
-                            </v-btn-toggle>
-                        </v-col>
-                    </v-row>
-
-                    <v-row align="center" no-gutters class="mb-6 px-2">
-                        <v-col cols="4">
-                            <span class="text-body-2 text-grey-lighten-1">Time</span>
-                        </v-col>
-                        <v-col cols="5" class="d-flex justify-end">
-                            <v-btn-toggle v-model="stg.units.time" mandatory color="blue-darken-2" density="compact"
-                                @update:model-value="updateLocation" class="unit-toggle-group">
-                                <v-btn value="utc" size="small" class="px-2">UTC</v-btn>
-                                <v-btn value="locale" size="small" class="px-4">Local</v-btn>
-                            </v-btn-toggle>
-                        </v-col>
-                    </v-row>
-
-                    <v-row align="center" no-gutters class="mb-6 px-2">
-                        <v-col cols="4">
-                            <span class="text-body-2 text-grey-lighten-1">Time Format</span>
-                        </v-col>
-                        <v-col cols="4" class="d-flex justify-end">
-                            <v-btn-toggle v-model="stg.units.timeFormat" mandatory color="blue-darken-2"
-                                density="compact" @update:model-value="updateLocation" class="unit-toggle-group">
-                                <v-btn value="12" size="small" class="px-2">12</v-btn>
-                                <v-btn value="24" size="small" class="px-4">24</v-btn>
-                            </v-btn-toggle>
-                        </v-col>
-                    </v-row>
-
-                    <v-row density="comfortable">
-                        <v-col class="text-info" cols="6">
-                            <v-text-field v-model.number="stg.lightning.homeLocation.lat" label="Lat" density="compact"
-                                variant="outlined" @keydown.enter.prevent="updateLocation"
-                                @change="updateLocation"></v-text-field>
-                        </v-col>
-
-                        <v-col class="text-info" cols="6">
-                            <v-text-field v-model.number="stg.lightning.homeLocation.lon" label="Lon" density="compact"
-                                variant="outlined" @keydown.enter.prevent="updateLocation"
-                                @change="updateLocation"></v-text-field>
-                        </v-col>
-                    </v-row>
-                </v-window-item>
-
-                <v-window-item class="pb-2 d-block" value="lightning" height="auto" style="overflow-y: auto;">
-                    <div class="text-subtitle-2 mb-1 text-secondary">
-                        <v-icon size="small" color="#b06e69">mdi-clock-outline</v-icon> Reset Time ({{
-                            stg.lightning.resetTime }}m)
-                    </div>
-                    <v-btn-toggle v-model="stg.lightning.resetTime" density="compact" mandatory color="blue"
-                        class="mb-6">
-                        <v-btn :value="5" size="small">5m</v-btn>
-                        <v-btn :value="10" size="small">10m</v-btn>
-                        <v-btn :value="30" size="small">30m</v-btn>
-                        <v-btn :value="60" size="small">60m</v-btn>
-                    </v-btn-toggle>
-
-                    <v-row density="comfortable">
-                        <v-col cols="6">
-                            <div class="text-subtitle-2 mb-1 text-secondary">
-                                <v-icon color="#4285F4" size="small">mdi-earth</v-icon> Area Radius
-                            </div>
-                            <v-text-field v-model.number="stg.lightning.searchRadius" density="compact"
-                                variant="outlined"></v-text-field>
-                        </v-col>
-                        <v-col cols="6">
-                            <div class="text-subtitle-2 mb-1 text-secondary">
-                                <v-icon color="orange" size="small">mdi-lightning-bolt</v-icon> Alert Radius
-                            </div>
-                            <v-text-field v-model.number="stg.lightning.alertThreshold" density="compact"
-                                variant="outlined"></v-text-field>
-                        </v-col>
-                    </v-row>
-
-                    <div class="text-overline text-orange mb-1">Calculation Method</div>
-                    <v-select v-model="stg.lightning.selectedMethod" :items="stg.lightning.calculationMethods"
-                        variant="outlined" density="compact"></v-select>
-
-                    <div class="text-overline text-orange mt-2">Sensitivity</div>
-                    <v-slider class="mb-6" v-model="stg.lightning.sensitivity" min="0.5" max="10" step="0.5"
-                        color="orange" thumb-label="always" show-ticks="always" persistent-hint
-                        hint="Higher values reduce 'flip-flopping' of the trend">
-                        <template v-slot:append>
-                            <v-text-field v-model="stg.lightning.sensitivity" density="compact" style="width: 70px"
-                                variant="outlined" hide-details type="number"></v-text-field>
-                        </template>
-                    </v-slider>
-
-                    <div class="text-overline text-orange mt-2 mb-1">Sample Size</div>
-                    <v-text-field v-model.number="stg.lightning.sampleSize" density="compact" variant="outlined"
-                        hide-details></v-text-field>
-                </v-window-item>
-            </v-window>
-        </v-card-text>
-
-        <v-card-actions class="pt-4">
-            <v-btn variant="outlined" color="blue" size="small" @click="exportToDisk">Backup</v-btn>
-            <v-btn variant="outlined" color="green" size="small" @click="$refs.fileInput.click()">Restore</v-btn>
-            <input type="file" ref="fileInput" style="display: none" @change="importFromDisk" accept=".json">
-
-        </v-card-actions>
-    </v-card>
+    <footer class="backup-actions">
+      <button type="button" @click="exportToDisk">BACKUP</button>
+      <button type="button" @click="$refs.fileInput.click()">RESTORE</button>
+      <input ref="fileInput" type="file" accept=".json" @change="importFromDisk">
+    </footer>
+  </article>
 </template>
 
 <script>
-import { settings } from './dashboardSettings.js';
 export default {
-    props: ['stg'],
-    data() {
-        return {
-
-            shared: window.G_STATE,
-            socket: null,
-            timer: null,
-            settingsView: 'general'
-        };
+  name: 'SettingsCard',
+  props: {
+    stg: {
+      type: Object,
+      required: true,
     },
-    methods: {
-        changeDistanceUnit(newUnit) {
-            if (!newUnit) return;
-
-
-            const normalizedUnit = newUnit.toLowerCase();
-
-            this.stg.units.distance = normalizedUnit;
-
-
-            localStorage.setItem('station_config_v1', JSON.stringify(this.stg));
-        },
-
-        updateLocation() {
-
-            const lat = parseFloat(this.stg.lightning.homeLocation.lat);
-            const lon = parseFloat(this.stg.lightning.homeLocation.lon);
-
-            if (isNaN(lat) || isNaN(lon)) {
-                console.error("Invalid coordinates. Aborting save.");
-                return;
-            }
-
-
-            this.stg.lightning.homeLocation.lat = lat;
-            this.stg.lightning.homeLocation.lon = lon;
-
-
-            localStorage.setItem('station_config_v1', JSON.stringify(this.stg));
-
-        },
-
-
-        exportToDisk() {
-            try {
-
-                const cleanData = JSON.parse(JSON.stringify(this.stg));
-
-
-                if (cleanData.weather) {
-                    cleanData.weather.current = {};
-                    cleanData.weather.forecast = [];
-                }
-                if (cleanData.lightning) {
-                    cleanData.lightning.history = [];
-
-                    delete cleanData.lightning.currentStorm;
-                }
-                if (cleanData.solar) {
-                    cleanData.solar.current = {};
-                }
-
-
-                localStorage.setItem('station_config_v1', JSON.stringify(cleanData));
-
-
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanData, null, 2));
-                const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                const safeAppName = this.stg.ui.appName.replace(/[^a-zA-Z0-9-_]/g, '_');
-                downloadAnchorNode.setAttribute("download", `${this.stg.ui.appName}_station_settings.json`);
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
-
-            } catch (e) {
-                console.error("Export failed:", e);
-            }
-        },
-
-
-        importFromDisk(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedConfig = JSON.parse(e.target.result);
-
-
-                    const deepMerge = (target, source) => {
-                        for (const key in source) {
-                            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-                                if (!target[key]) target[key] = {};
-                                deepMerge(target[key], source[key]);
-                            } else {
-                                target[key] = source[key];
-                            }
-                        }
-                    };
-
-
-                    deepMerge(this.stg, importedConfig);
-
-
-                    localStorage.setItem('station_config_v1', JSON.stringify(JSON.parse(JSON.stringify(this.stg))));
-
-                    alert("Settings imported successfully! Layout updated.");
-                } catch (err) {
-                    console.error("Import parsing error:", err);
-                    alert("Error parsing the settings file. Ensure it is a valid, uncorrupted JSON profile.");
-                }
-            };
-            reader.readAsText(file);
-        },
+  },
+  methods: {
+    normalizeLocation() {
+      const lat = parseFloat(this.stg.lightning.homeLocation.lat);
+      const lon = parseFloat(this.stg.lightning.homeLocation.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      this.stg.lightning.homeLocation.lat = lat;
+      this.stg.lightning.homeLocation.lon = lon;
     },
-    computed: {
-        displayPressure() {
-            const raw = this.weatherData.pressure;
-            if (this.stg.weather.unit === 'in') {
-                return (raw * 0.02953).toFixed(2);
-            }
-            return raw;
+    exportToDisk() {
+      try {
+        const cleanData = JSON.parse(JSON.stringify(this.stg));
+
+        if (cleanData.weather) {
+          cleanData.weather.current = {};
+          cleanData.weather.forecast = [];
         }
-    }
+        if (cleanData.lightning) {
+          cleanData.lightning.history = [];
+          delete cleanData.lightning.currentStorm;
+          delete cleanData.lightning.heartbeat;
+        }
+        if (cleanData.solar) {
+          cleanData.solar.current = {};
+        }
+
+        const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(cleanData, null, 2))}`;
+        const downloadAnchorNode = document.createElement('a');
+        const safeAppName = (this.stg.ui.appName || 'SkyDash').replace(/[^a-zA-Z0-9-_]/g, '_');
+        downloadAnchorNode.setAttribute('href', dataStr);
+        downloadAnchorNode.setAttribute('download', `${safeAppName}_station_settings.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+      } catch (e) {
+        console.error('Export failed:', e);
+      }
+    },
+    importFromDisk(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedConfig = JSON.parse(e.target.result);
+
+          const deepMerge = (target, source) => {
+            Object.keys(source).forEach((key) => {
+              if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                if (!target[key]) target[key] = {};
+                deepMerge(target[key], source[key]);
+              } else {
+                target[key] = source[key];
+              }
+            });
+          };
+
+          deepMerge(this.stg, importedConfig);
+          localStorage.setItem('station_config_v1', JSON.stringify(JSON.parse(JSON.stringify(this.stg))));
+        } catch (err) {
+          console.error('Import parsing error:', err);
+          alert('Error parsing the settings file. Ensure it is a valid JSON profile.');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    },
+  },
 };
 </script>
 
 <style scoped>
-:root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
+.instrument-panel {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #4a3f2c;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #231e15, #181309);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 160, .06), 0 18px 40px rgba(0, 0, 0, .5);
 }
 
-html.dark {
-    --bg-color: #1a1a1a;
-    --text-color: #ffffff;
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #33291a;
+  background: linear-gradient(180deg, #2a2418, #1c1710);
 }
 
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-
-.unit-toggle-group {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
+.led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-
-.unit-toggle-group .v-btn {
-    color: rgba(255, 255, 255, 0.5) !important;
+.config-led {
+  background: #b8ab8d;
+  box-shadow: 0 0 10px rgba(184, 171, 141, .6);
 }
 
-
-.unit-toggle-group .v-btn--active {
-    color: white !important;
+h2 {
+  margin: 0;
+  color: #f1e7d3;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .22em;
 }
 
-.unit-toggle-group {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+.panel-header p {
+  margin: 2px 0 0;
+  color: #6f654e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+}
+
+.config-section {
+  padding: 14px 16px 0;
+}
+
+.config-section h3 {
+  margin: 0 0 10px;
+  color: #877c68;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .24em;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.toggle-row > span {
+  width: 88px;
+  flex: 0 0 88px;
+  color: #a99b7e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+}
+
+.segmented {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+}
+
+.segmented button,
+.backup-actions button {
+  border: 1px solid #4a3f2c;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #241f17, #17130d);
+  color: #8a7f6a;
+  cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  transition: .12s ease;
+}
+
+.segmented button {
+  flex: 1 1 0;
+  min-height: 34px;
+}
+
+.segmented button.selected {
+  border-color: #ffce7a;
+  background: linear-gradient(180deg, #ffb64d, #e8902f);
+  color: #1a1206;
+  box-shadow: 0 0 14px rgba(255, 150, 40, .5), inset 0 1px 0 rgba(255, 255, 255, .4);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lightning-grid {
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+}
+
+label {
+  display: block;
+  padding: 9px 10px;
+  border: 1px solid #352d20;
+  border-radius: 9px;
+  background: rgba(12, 9, 5, .5);
+}
+
+label span {
+  display: block;
+  margin-bottom: 5px;
+  color: #6f654e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .2em;
+}
+
+input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+input[type='number'] {
+  appearance: textfield;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: auto;
+  padding: 16px;
+}
+
+.backup-actions button {
+  min-height: 38px;
+  background: linear-gradient(180deg, #2a2418, #181309);
+  color: #c9b89a;
+  letter-spacing: .18em;
+}
+
+.backup-actions button:hover {
+  border-color: #ffb64d;
+  color: #ffce9a;
+}
+
+.backup-actions input {
+  display: none;
 }
 </style>

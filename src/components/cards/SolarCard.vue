@@ -1,575 +1,633 @@
 <template>
-    <v-sheet value="solar" transition="fade-transition" flat class="solarCard mx-auto station-card">
-        <div class="d-flex justify-space-between align-center header-bg px-3 py-2"
-            style="position: relative; z-index: 10;">
-            <div class="d-flex align-center">
-                <v-icon icon="mdi-sun-wireless" color="error" size="large"> </v-icon>
-                <div class="d-flex flex-column align-start ml-2">
-                    <span class="text-subtitle-1 font-weight-bold stat-value"
-                        style="line-height: 1.0rem; font-size: 1.2rem;">Solar</span>
-                    <span :key="stg?.solar?.current?.ionosphere?.ts" class="card-source-text"
-                        style="font-size: 0.55rem;">NOAA.org / KC2G.com {{
-                            stg?.solar?.current?.ionosphere?.ts }}</span>
-                </div>
-            </div>
+  <article class="instrument-panel solar-card">
+    <header class="panel-header">
+      <div class="title-wrap">
+        <span class="led solar-led" :class="{ active: hasScaleActivity }"></span>
+        <div>
+          <h2>SOLAR</h2>
+          <p>HF PROPAGATION</p>
         </div>
+      </div>
+      <span class="status-chip">BANDS: {{ bandStatus }}</span>
+    </header>
 
-        <div v-if="stg?.solar?.current?.geoMagnetic && stg?.solar?.current?.ionosphere">
-            <v-row justify="space-around" class="mt-1">
-                <!-- SFI Gauge: Max 300 -->
-                <v-col cols="4" class="text-center">
-                    <v-progress-circular :model-value="Number(stg.solar.current.geoMagnetic.flux / 300) * 100"
-                        :max="300" :size="60" :width="8" :color="getSFIColor(stg.solar.current.geoMagnetic?.flux)"
-                        bg-color="grey-darken-3" rotate="220">
-                        <span class="text-h6 font-weight-bold">{{ stg.solar.current.geoMagnetic.flux
-                        }}</span>
-                    </v-progress-circular>
-                    <div v-tooltip:bottom="'10.7cm'" class="text-subtitle-2 mt-1  stat-value">SFI</div>
-                </v-col>
+    <section class="gauges">
+      <div v-for="gauge in gauges" :key="gauge.label" class="gauge-cell">
+        <svg viewBox="0 0 200 112" aria-hidden="true">
+          <path :d="arc(0, 1, 82)" class="track" />
+          <path
+            v-for="zone in gauge.zones"
+            :key="`${gauge.label}-${zone.from}`"
+            :d="arc(zone.from, zone.to, 82)"
+            class="zone"
+            :stroke="zone.color"
+          />
+          <line
+            v-for="tick in ticks"
+            :key="tick.i"
+            :x1="point(tick.f, 90).x"
+            :y1="point(tick.f, 90).y"
+            :x2="point(tick.f, tick.major ? 72 : 79).x"
+            :y2="point(tick.f, tick.major ? 72 : 79).y"
+            :stroke-width="tick.major ? 2 : 1"
+            class="tick"
+          />
+          <line
+            x1="100"
+            y1="100"
+            :x2="point(gauge.fraction, 60).x"
+            :y2="point(gauge.fraction, 60).y"
+            :stroke="gauge.color"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            :style="{ filter: `drop-shadow(0 0 4px ${gauge.color})` }"
+          />
+          <circle cx="100" cy="100" r="6.5" fill="#1b1813" :stroke="gauge.color" stroke-width="2" />
+        </svg>
+        <strong :style="{ color: gauge.color }">{{ gauge.display }}</strong>
+        <span>{{ gauge.label }}</span>
+      </div>
+    </section>
 
-                <!-- A-Index Gauge: Max 100 -->
-                <v-col cols="4" class="text-center">
-                    <v-progress-circular :model-value="Number(stg.solar.current.geoMagnetic.aIndex || 0)" :max="100"
-                        :size="60" :width="8" :color="getAIndexColor(stg.solar.current.geoMagnetic.aIndex)"
-                        bg-color="grey-darken-3" rotate="220">
-                        <span class="text-h6 font-weight-bold">
-                            {{ stg.solar.current.geoMagnetic.aIndex ?? '--' }}
-                        </span>
-                    </v-progress-circular>
-                    <div class="text-subtitle-2 mt-1 stat-value" v-tooltip:bottom="'Planetary Ap'">A</div>
-                </v-col>
+    <section class="iono-grid">
+      <div>
+        <span>FOF2</span>
+        <strong>{{ ionosphere.fof2 ?? '--' }} <em>MHZ</em></strong>
+      </div>
+      <div>
+        <span>MUF</span>
+        <strong>{{ ionosphere.mufd ?? '--' }} <em>MHZ</em></strong>
+      </div>
+      <div>
+        <span>HMF2</span>
+        <strong>{{ convertedHmf2 }} <em>{{ distanceUnitLabel }}</em></strong>
+      </div>
+    </section>
 
-                <!-- K-Index Gauge: Max 9 -->
-                <v-col cols="4" class="text-center">
-                    <v-progress-circular :model-value="Number((stg.solar.current.geoMagnetic?.kIndex ?? 0) / 9) * 100"
-                        :max="9" :size="60" :width="8" :color="getKIndexColor(stg.solar.current.geoMagnetic.kIndex)"
-                        bg-color="grey-darken-3" rotate="220">
-                        <span class="text-h6 font-weight-bold">{{ stg.solar.current.geoMagnetic.kIndex }}</span>
-                    </v-progress-circular>
-                    <div class="text-subtitle-2 mt-1 stat-value" v-tooltip:bottom="'Planetary Kp'">K</div>
-                </v-col>
-            </v-row>
+    <section class="scale-stack">
+      <div v-for="scale in scales" :key="scale.key" class="scale-row">
+        <strong :class="{ dim: scale.value === 0 }">{{ scale.key }}{{ scale.value || '' }}</strong>
+        <span>{{ scale.name }}</span>
+        <div class="segments">
+          <i v-for="n in 5" :key="n" :class="{ lit: n <= scale.value }"></i>
         </div>
+        <em>{{ getScaleCondition(scale.value) }}</em>
+      </div>
+    </section>
 
-        <!-- Critical Frequency (foF2) -->
-        <v-row no-gutters class="border-t-lg border-white-op py-2 mt-2">
-            <!-- foF2 -->
-            <v-col cols="4" class="d-flex flex-column align-center border-r ionosphere-value border-white-op">
-                <v-icon icon="mdi-wave" v-tooltip:top="'F2 Critical Freq'" color="cyan-lighten-3" size="small"
-                    class="mb-1"></v-icon>
-                <div class="text-body-2 font-weight-bold  stat-value" style="line-height: 1;">
-                    {{ stg.solar.current.ionosphere.fof2 }}
-                </div>
-                <div class="text-grey-darken-1 mt-1"
-                    style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                    foF2
-                </div>
-            </v-col>
-
-            <!-- MUF -->
-            <v-col cols="4" class="d-flex flex-column align-center border-r border-white-op">
-                <v-icon icon="mdi-radio-tower" v-tooltip:top="'Max Usable Freq'" color="green-lighten-3" size="small"
-                    class="mb-1"></v-icon>
-                <div class="text-body-2 font-weight-bold  stat-value" style="line-height: 1;">
-                    {{ stg.solar.current.ionosphere.mufd }}
-                </div>
-                <div class="text-grey-darken-1 mt-1"
-                    style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                    MUF
-                </div>
-            </v-col>
-
-            <!-- hmF2 -->
-            <v-col cols="4" class="d-flex flex-column align-center">
-                <v-icon icon="mdi-arrow-up-bold-box-outline" v-tooltip:top="'F2 Max Altitude'" color="amber-lighten-3"
-                    size="small" class="mb-1"></v-icon>
-                <div class="text-body-2 font-weight-bold  stat-value" style="line-height: 1;">
-                    {{ convertedHmf2 }} {{ distanceUnitLabel }}
-                </div>
-                <div class="text-grey-darken-1 mt-1"
-                    style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                    hmF2
-                </div>
-            </v-col>
-        </v-row>
-
-        <div><v-row no-gutters justify="center" class="mt-2 mb-2">
-                <v-col v-for="(val, key) in stg.solar.current.scales.current" :key="key" cols="3" class="mx-1">
-                    <v-card flat border class="text-center rounded-sm" :color="getScaleColor(val, true)">
-                        <!-- The Big Letter -->
-                        <div class="text-h4 font-weight-black pt-1" style="line-height: 1;"
-                            v-tooltip:top="getTooltipContent(key)">
-                            {{ key.toUpperCase() }} {{ val > 0 ? val : '' }}
-                        </div>
-
-                        <!-- The Status Text -->
-                        <v-sheet class="mt-1 py-0  font-weight-bold" :color="getScaleColor(val, true)">
-                            {{ getScaleCondition(val) }}
-                        </v-sheet>
-                    </v-card>
-                </v-col>
-                <span class="text-grey-darken-1 mt-2" style="font-size: 0.70rem;">Latest
-                    Observed</span>
-            </v-row>
-
-            <v-expansion-panels variant="accordion">
-                <v-expansion-panel bg-color="transparent" elevation="0">
-                    <v-expansion-panel-title class="text-caption font-weight-bold px-4">
-                        Flare/Storm Probabilities
-                    </v-expansion-panel-title>
-
-                    <v-expansion-panel-text class="px-4 pb-4">
-                        <!-- R1-R2 Probability -->
-                        <div class="d-flex align-center mb-2">
-                            <span class="mr-2 prob-label">R1-R2</span>
-                            <v-progress-linear :model-value="stg.solar.current.scales.probabilities.rMinor"
-                                color="yellow-darken-2" height="8" rounded></v-progress-linear>
-                            <span class="text-caption ml-2 prob-percent">{{
-                                stg.solar.current.scales.probabilities.rMinor }}%</span>
-                        </div>
-
-                        <!-- R3-R5 Probability -->
-                        <div class="d-flex align-center mb-2">
-                            <span class=" mr-2 prob-label">R3-R5</span>
-                            <v-progress-linear :model-value="stg.solar.current.scales.probabilities.rMajor"
-                                color="orange-darken-2" height="8" rounded></v-progress-linear>
-                            <span class="text-caption ml-2 prob-percent">{{
-                                stg.solar.current.scales.probabilities.rMajor }}%</span>
-                        </div>
-
-                        <!-- S1+ Probability -->
-                        <div class="d-flex align-center mb-1">
-                            <span class="mr-2 prob-label">S1+</span>
-                            <v-progress-linear :model-value="stg.solar.current.scales.probabilities.sStorm"
-                                color="red-darken-2" height="8" rounded></v-progress-linear>
-                            <span class="text-caption ml-2 prob-percent">{{
-                                stg.solar.current.scales.probabilities.sStorm }}%</span>
-                        </div>
-                    </v-expansion-panel-text>
-                </v-expansion-panel>
-            </v-expansion-panels>
-        </div>
-    </v-sheet>
+    <footer class="prob-footer">
+      <h3>24H FLARE / STORM PROBABILITY</h3>
+      <div v-for="prob in probabilities" :key="prob.label" class="prob-row">
+        <span>{{ prob.label }}</span>
+        <div><i :style="{ width: `${prob.value}%` }"></i></div>
+        <strong>{{ prob.value }}%</strong>
+      </div>
+    </footer>
+  </article>
 </template>
 
 <script>
-
-
 export default {
-    name: 'SolarCard',
-    inheritAttrs: false,
-    props: {
-        stg: {
-            type: Object,
-            required: true
-        }
+  name: 'SolarCard',
+  props: {
+    stg: {
+      type: Object,
+      required: true,
     },
+  },
+  data() {
+    return {
+      solarTimer: null,
+    };
+  },
+  mounted() {
+    this.fetchSolarFlux();
+    this.fetchGeomagneticIndices();
+    this.fetchIonosphere();
+    this.fetchScales();
 
-    data() {
-        return {
-            shared: window.G_STATE,
-            currentServerIndex: 0,
-            connection: null,
-            reconnectTimer: null,
-            heartbeat: null,
-            panel: null,
-            displayTime: '--:--',
-            solarData: {}
+    this.solarTimer = setInterval(() => {
+      this.fetchSolarFlux();
+      this.fetchGeomagneticIndices();
+      this.fetchIonosphere();
+      this.fetchScales();
+    }, 900000);
+  },
+  beforeUnmount() {
+    if (this.solarTimer) clearInterval(this.solarTimer);
+  },
+  watch: {
+    'stg.units.distance'() {
+      this.fetchIonosphere();
+    },
+  },
+  computed: {
+    geo() {
+      return this.stg.solar.current.geoMagnetic || {};
+    },
+    ionosphere() {
+      return this.stg.solar.current.ionosphere || {};
+    },
+    currentScales() {
+      return this.stg.solar.current.scales?.current || { r: 0, s: 0, g: 0 };
+    },
+    hasScaleActivity() {
+      return Object.values(this.currentScales).some((value) => Number(value) > 0);
+    },
+    bandStatus() {
+      const k = Number(this.geo.kIndex || 0);
+      const a = Number(this.geo.aIndex || 0);
+      if (k >= 6 || a >= 30) return 'POOR';
+      if (k >= 4 || a >= 15) return 'FAIR';
+      return 'GOOD';
+    },
+    ticks() {
+      return Array.from({ length: 11 }, (_, i) => ({
+        i,
+        f: i / 10,
+        major: i % 5 === 0,
+      }));
+    },
+    gauges() {
+      return [
+        {
+          label: 'SFI',
+          value: Number(this.geo.flux || 0),
+          min: 60,
+          max: 200,
+          color: '#ffb64d',
+          zones: [
+            { from: 0, to: .071, color: '#ec5a3c' },
+            { from: .071, to: .286, color: '#f0c04a' },
+            { from: .286, to: .643, color: '#9cd67f' },
+            { from: .643, to: 1, color: '#5fd15f' },
+          ],
+        },
+        {
+          label: 'A-INDEX',
+          value: Number(this.geo.aIndex || 0),
+          min: 0,
+          max: 50,
+          color: this.geoColor(Number(this.geo.aIndex || 0), [10, 20, 30]),
+          zones: [
+            { from: 0, to: .2, color: '#9cd67f' },
+            { from: .2, to: .4, color: '#f0c04a' },
+            { from: .4, to: .6, color: '#f0913f' },
+            { from: .6, to: 1, color: '#ec5a3c' },
+          ],
+        },
+        {
+          label: 'K-INDEX',
+          value: Number(this.geo.kIndex || 0),
+          min: 0,
+          max: 9,
+          color: this.geoColor(Number(this.geo.kIndex || 0), [3, 5, 7]),
+          zones: [
+            { from: 0, to: .333, color: '#9cd67f' },
+            { from: .333, to: .556, color: '#f0c04a' },
+            { from: .556, to: .778, color: '#f0913f' },
+            { from: .778, to: 1, color: '#ec5a3c' },
+          ],
+        },
+      ].map((gauge) => ({
+        ...gauge,
+        display: gauge.label === 'A-INDEX' ? String(Math.round(gauge.value)).padStart(2, '0') : Math.round(gauge.value),
+        fraction: this.clamp((gauge.value - gauge.min) / (gauge.max - gauge.min), 0, 1),
+      }));
+    },
+    scales() {
+      return [
+        { key: 'R', name: 'RADIO BLACKOUT', value: Number(this.currentScales.r || 0) },
+        { key: 'S', name: 'SOLAR RADIATION', value: Number(this.currentScales.s || 0) },
+        { key: 'G', name: 'GEOMAGNETIC', value: Number(this.currentScales.g || 0) },
+      ];
+    },
+    probabilities() {
+      const probs = this.stg.solar.current.scales?.probabilities || {};
+      return [
+        { label: 'R1-R2 MINOR', value: Number(probs.rMinor || 0) },
+        { label: 'R3-R5 MAJOR', value: Number(probs.rMajor || 0) },
+        { label: 'S1+ STORM', value: Number(probs.sStorm || 0) },
+      ];
+    },
+    convertedHmf2() {
+      const raw = Number(this.ionosphere.hmf2);
+      if (!Number.isFinite(raw)) return '--';
+      return this.stg.units.distance === 'mi' ? Math.round(raw * 0.621371) : Math.round(raw);
+    },
+    distanceUnitLabel() {
+      return this.stg.units.distance === 'mi' ? 'MI' : 'KM';
+    },
+  },
+  methods: {
+    clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    },
+    point(f, r) {
+      const angle = (180 - 180 * f) * Math.PI / 180;
+      return {
+        x: 100 + r * Math.cos(angle),
+        y: 100 - r * Math.sin(angle),
+      };
+    },
+    arc(f0, f1, r) {
+      const p0 = this.point(f0, r);
+      const p1 = this.point(f1, r);
+      return `M ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y}`;
+    },
+    geoColor(value, stops) {
+      if (value <= stops[0]) return '#9cd67f';
+      if (value <= stops[1]) return '#f0c04a';
+      if (value <= stops[2]) return '#f0913f';
+      return '#ec5a3c';
+    },
+    getScaleCondition(value) {
+      const val = parseInt(value) || 0;
+      if (val === 5) return 'EXTREME';
+      if (val === 4) return 'SEVERE';
+      if (val === 3) return 'STRONG';
+      if (val === 2) return 'MODERATE';
+      if (val === 1) return 'MINOR';
+      return 'QUIET';
+    },
+    async fetchGeomagneticIndices() {
+      try {
+        const response = await fetch('https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt');
+        const payload = await response.text();
+        let aIndex = -1;
+        let kIndex = -1;
+        const lines = payload.split('\n');
+        let i = 0;
+
+        for (i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].startsWith(':') || lines[i].startsWith('#') || !lines[i].trim()) continue;
+          aIndex = parseInt(lines[i].substring(59).trim().split(/\s+/)[0]);
+          if (aIndex >= 0) break;
+        }
+
+        if (i >= 0) {
+          const values = lines[i].substring(65).trim().split(/\s+/);
+          for (let j = values.length - 1; j >= 0; j--) {
+            kIndex = parseFloat(values[j]);
+            if (kIndex >= 0) break;
+          }
+        }
+
+        this.stg.solar.current.geoMagnetic.aIndex = aIndex;
+        this.stg.solar.current.geoMagnetic.kIndex = kIndex;
+      } catch (error) {
+        console.error('Geomagnetic fetch failed:', error);
+      }
+    },
+    async fetchSolarFlux() {
+      try {
+        const response = await fetch('https://services.swpc.noaa.gov/json/f107_cm_flux.json');
+        const data = await response.json();
+        if (data && data.length > 0) {
+          this.stg.solar.current.geoMagnetic.flux = parseFloat(data[0].flux);
+        }
+      } catch (error) {
+        console.error('Solar flux fetch failed:', error);
+      }
+    },
+    async fetchIonosphere() {
+      const home = this.stg?.lightning?.homeLocation;
+      if (!home || !home.lat || !home.lon) return;
+
+      try {
+        const response = await fetch(`/api/kc2g/point-prediction?grid=${home.lat},${home.lon}`);
+        const data = await response.json();
+        const { fof2, hmf2, mufd } = data;
+
+        this.stg.solar.current.ionosphere = {
+          fof2: Number(fof2).toFixed(2),
+          hmf2: Number(hmf2).toFixed(1),
+          mufd: Number(mufd).toFixed(2),
+          ts: new Date().toLocaleString('en-US', {
+            hour12: String(this.stg.units.timeFormat) === '12',
+            hour: 'numeric',
+            minute: 'numeric',
+          }),
         };
+      } catch (error) {
+        console.error('Ionosphere fetch failed:', error);
+      }
     },
-    beforeUnmount() {
-        if (this.solarTimer) {
-            clearInterval(this.solarTimer);
-        }
+    async fetchScales() {
+      try {
+        const response = await fetch('https://services.swpc.noaa.gov/products/noaa-scales.json');
+        const data = await response.json();
+        const observed = data['0'];
+        const forecast = data['1'];
+
+        this.stg.solar.current.scales = {
+          current: {
+            r: parseInt(observed.R.Scale) || 0,
+            s: parseInt(observed.S.Scale) || 0,
+            g: parseInt(observed.G.Scale) || 0,
+          },
+          probabilities: {
+            rMinor: parseInt(forecast.R.MinorProb) || 0,
+            rMajor: parseInt(forecast.R.MajorProb) || 0,
+            sStorm: parseInt(forecast.S.Prob) || 0,
+          },
+        };
+      } catch (error) {
+        console.error('NOAA scales fetch failed:', error);
+      }
     },
-    mounted() {
-
-
-
-        if (this.solarTimer) clearInterval(this.solarTimer);
-
-        const saved = localStorage.getItem('station_config_v1');
-        if (saved && saved !== "undefined") {
-            try {
-                const config = JSON.parse(saved);
-
-            } catch (e) {
-            }
-        } else {
-        }
-
-
-        this.fetchSolarData();
-        this.fetchGeomagneticIndices();
-        this.fetchSolarFlux();
-        this.fetchIonosphere();
-        this.fetchScales();
-
-        this.solarTimer = setInterval(() => {
-            this.fetchSolarData();
-            this.fetchSolarFlux();
-            this.fetchGeomagneticIndices();
-            this.fetchIonosphere();
-            this.fetchScales();
-        }, 900000);
-    },
-    unmounted() { },
-    watch: {
-        'stg.units.distance': {
-            handler(newUnit, oldUnit) {
-                this.fetchIonosphere();
-            },
-            deep: true,
-            immediate: false
-        },
-    },
-
-    computed: {
-        convertedHmf2() {
-
-            const solar = this.stg?.solar;
-            const iono = solar?.current?.ionosphere;
-            const raw = iono?.hmf2;
-
-            if (raw === undefined || raw === null) return '--';
-
-
-            const unit = String(this.stg?.units?.distance || 'Mi').trim().toLowerCase();
-            const isMi = unit === 'mi';
-
-            return isMi
-                ? Math.round(raw * 0.621371)
-                : Math.round(raw);
-        },
-
-        distanceUnitLabel() {
-            const unit = String(this.stg?.units?.distance || 'Mi').trim().toLowerCase();
-            return unit === 'mi' ? 'mi' : 'km';
-        },
-
-        currentDistanceUnit() {
-
-            return this.stg?.units?.distance?.toLowerCase() || 'mi';
-        },
-
-    },
-
-    methods: {
-        async fetchSolarData() {
-            const home = this.stg?.lightning?.homeLocation || { lat: 34.05, lon: -118.24 };
-
-
-            const urls = {
-                fof2: `https://prop.kc2g.com/api/point_prediction.json?grid=${home.lat},${home.lon}`,
-                flux: `https://services.swpc.noaa.gov/json/f107_cm_flux.json`,
-                scales: `https://services.swpc.noaa.gov/products/noaa-scales.json`,
-                indices: `https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt`
-            };
-
-            try {
-
-            } catch (error) {
-            }
-        },
-
-        async fetchGeomagneticIndices() {
-            const url = "https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt";
-
-            try {
-                const response = await fetch(url);
-                const payload = await response.text();
-
-                let aIndex = -1;
-                let kIndex = -1;
-
-                const lines = payload.split('\n');
-                let i = 0;
-
-
-                for (i = lines.length - 1; i >= 0; i--) {
-
-                    if (lines[i].startsWith(':') || lines[i].startsWith('#') || !lines[i].trim()) continue;
-
-                    aIndex = parseInt(lines[i].substring(59).trim().split(/\s+/)[0]);
-                    if (aIndex >= 0) break;
-                }
-
-
-                if (i >= 0) {
-                    let values = lines[i].substring(65).trim().split(/\s+/);
-                    for (let j = values.length - 1; j >= 0; j--) {
-                        kIndex = parseFloat(values[j]);
-                        if (kIndex >= 0) break;
-                    }
-                }
-
-                if (this.stg && this.stg.solar && this.stg.solar.current && this.stg.solar.current.geoMagnetic) {
-                    this.stg.solar.current.geoMagnetic.aIndex = aIndex;
-                    this.stg.solar.current.geoMagnetic.kIndex = kIndex;
-                }
-
-            } catch (error) {
-            }
-        },
-
-        async fetchSolarFlux() {
-            const url = "https://services.swpc.noaa.gov/json/f107_cm_flux.json";
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-
-
-                if (data && data.length > 0) {
-                    const currentFlux = parseFloat(data[0].flux);
-
-
-                    if (this.stg && this.stg.solar && this.stg.solar.current && this.stg.solar.current.geoMagnetic) {
-                        this.stg.solar.current.geoMagnetic.flux = currentFlux;
-                    }
-                }
-
-
-
-            } catch (error) {
-
-            }
-        },
-        async fetchIonosphere() {
-            const home = this.stg?.lightning?.homeLocation;
-
-            if (!home || !home.lat || !home.lon) {
-
-                return;
-            }
-
-            const url = `/api/kc2g/point-prediction?grid=${home.lat},${home.lon}`;
-            const unit = this.stg?.units?.distance.toLowerCase() === 'km' ? 1 : 0.621371;
-
-            try {
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-
-                const { fof2, hmf2, mufd, ts } = data;
-
-
-                const date = new Date();
-                const formattedTime = date.toLocaleString('en-US', {
-                    hour12: true,
-                    hour: 'numeric',
-                    minute: 'numeric'
-                });
-
-                if (this.stg && this.stg?.solar && this.stg.solar?.current?.ionosphere) {
-                    this.stg.solar.current.ionosphere = {
-                        fof2: fof2.toFixed(2),
-                        hmf2: hmf2.toFixed(1),
-                        mufd: mufd.toFixed(2),
-                        ts: formattedTime
-                    };
-                }
-            } catch (e) {
-            }
-        },
-
-        async fetchScales() {
-            const url = "https://services.swpc.noaa.gov/products/noaa-scales.json";
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-                const observed = data["0"];
-
-
-                const forecast = data["1"];
-
-                if (this.stg && this.stg?.solar && this.stg?.solar?.current?.scales) {
-                    this.stg.solar.current.scales = {
-                        current: {
-                            r: parseInt(observed.R.Scale) || 0,
-                            s: parseInt(observed.S.Scale) || 0,
-                            g: parseInt(observed.G.Scale) || 0
-                        },
-                        probabilities: {
-                            rMinor: parseInt(forecast.R.MinorProb) || 0,
-                            rMajor: parseInt(forecast.R.MajorProb) || 0,
-                            sStorm: parseInt(forecast.S.Prob) || 0
-                        }
-                    };
-                };
-            } catch (e) {
-
-            }
-        },
-        getSFIColor(sFi) {
-            if (sFi <= 70) return '#C81F00';
-            if (sFi <= 90) return '#FD9600';
-            if (sFi <= 110) return '#FEC801';
-            if (sFi <= 150) return '#7fb3cf';
-            if (sFi <= 300) return '#92d050';
-
-            return 'red';
-        },
-        getKIndexColor(k) {
-            if (k <= 3) return '#92d050';
-            if (k <= 5) return 'yellow';
-            if (k <= 7) return 'orange';
-            if (k <= 9) return 'red';
-            return 'red';
-        },
-        getAIndexColor(a) {
-            if (a <= 10) return '#92d050';
-            if (a <= 20) return 'yellow';
-            if (a <= 30) return 'orange';
-            if (a <= 40) return 'red';
-            return 'red';
-        },
-        getScaleColor(value, isLabel = false) {
-            const val = parseInt(value);
-
-
-            let color = '#92d050';
-
-            if (val === 5) color = '#C80000';
-            else if (val === 4) color = '#FF0000';
-            else if (val === 3) color = '#FF9600';
-            else if (val === 2) color = '#FFC800';
-            else if (val === 1) color = '#F6EB14';
-
-
-            return color;
-        },
-        getScaleCondition(value, isLabel = false) {
-            const val = parseInt(value) || 0;
-
-            let condition = 'None';
-
-            if (val === 5) condition = 'Extreme';
-            else if (val === 4) condition = 'Severe';
-            else if (val === 3) condition = 'Strong';
-            else if (val === 2) condition = 'Moderate';
-            else if (val === 1) condition = 'Minor';
-            else if (val === 0) condition = 'Quiet';
-
-            return condition;
-        },
-        getTooltipContent(key) {
-            const val = (key) || 'g';
-
-            let text = 'None';
-
-            if (val === 'r') text = 'Radio Blackout (x-ray flux)';
-            else if (val === 's') text = 'Solar Storm (proton flux)';
-            else if (val === 'g') text = 'Geomagnetic Activity (solar wind/cme)';
-
-            return text;
-        }
-    },
+  },
 };
-
 </script>
 
 <style scoped>
-.solarCard {
-    color: #e5eefb;
+.instrument-panel {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #4a3f2c;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #231e15, #181309);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 160, .06), 0 18px 40px rgba(0, 0, 0, .5);
 }
 
-.station-card {
-    width: 100%;
-    padding: 4px 14px 14px;
-    background:
-        linear-gradient(180deg, rgba(249, 115, 22, 0.12), transparent 34%),
-        rgba(15, 23, 42, 0.78);
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #33291a;
+  background: linear-gradient(180deg, #2a2418, #1c1710);
 }
 
-.header-bg {
-    margin: 0 0 10px;
-    padding: 12px !important;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    border-radius: 16px;
-    background: rgba(2, 6, 23, 0.32);
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.card-source-text {
-    color: #8fa3b8;
+.led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.border-white-op {
-    border-top-color: rgba(148, 163, 184, 0.14) !important;
-    border-top-width: 1px !important;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
+.solar-led {
+  background: #ffb64d;
+  box-shadow: 0 0 10px rgba(255, 182, 77, .7);
 }
 
-.my-button {
-    background-color: var(--btn-bg);
-    color: var(--text-primary);
+.solar-led.active {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.stat-value {
-    color: #f8fafc;
-    font-weight: bold;
+h2 {
+  margin: 0;
+  color: #f1e7d3;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .22em;
 }
 
-.label-caption {
-    color: #D7CCC8 !important;
-    font-size: 0.75rem;
-    font-weight: 500;
+.panel-header p {
+  margin: 2px 0 0;
+  color: #6f654e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
 }
 
-.ionosphere-value {
-    color: #e2e8f0 !important;
-    font-weight: bold;
+.status-chip {
+  padding: 6px 9px;
+  border: 1px solid #35472e;
+  border-radius: 7px;
+  background: #0e150c;
+  color: #9cd67f;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
-.metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+.gauges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 17px 14px 12px;
 }
 
-.metric-cell {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 4px 8px;
-    gap: 8px;
+.gauge-cell {
+  flex: 1 1 120px;
+  text-align: center;
 }
 
-.metric-cell .label {
-    display: flex;
-    min-width: 40px;
-    justify-content: center;
+.gauge-cell svg {
+  width: min(170px, 100%);
+  height: auto;
+  overflow: visible;
 }
 
-.text-caption {
-    color: #cbd5e1
+.track,
+.zone {
+  fill: none;
+  stroke-linecap: round;
 }
 
-.val {
-    font-size: 0.80rem;
-    color: #e2e8f0;
-    font-weight: 600;
-    font-family: 'Roboto Mono', monospace;
+.track {
+  stroke: #2b271f;
+  stroke-width: 9;
 }
 
-.v-progress-linear {
-    background-color: rgba(148, 163, 184, 0.3) !important;
-    overflow: hidden;
+.zone {
+  stroke-width: 7;
+  opacity: .9;
 }
 
-.prob-label {
-    color: #cbd5e1 !important;
-    font-weight: 600;
-    width: 65px;
+.tick {
+  stroke: #6d6350;
 }
 
-.prob-percent {
-    color: #cbd5e1 !important;
-    width: 35px;
-    text-align: right;
+.gauge-cell strong {
+  display: block;
+  margin-top: -5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 26px;
+  font-weight: 400;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.gauge-cell span,
+.iono-grid span,
+.scale-row span,
+.prob-footer h3,
+.prob-row span {
+  color: #877c68;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  letter-spacing: .18em;
+}
+
+.gauge-cell span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.iono-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.iono-grid div {
+  padding: 10px 6px;
+  border: 1px solid #352d20;
+  border-radius: 9px;
+  background: rgba(12, 9, 5, .5);
+  text-align: center;
+}
+
+.iono-grid span {
+  display: block;
+  font-size: 10px;
+}
+
+.iono-grid strong {
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  font-weight: 400;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.iono-grid em {
+  color: #6f654e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.scale-stack {
+  padding: 12px 14px;
+  border-top: 1px solid #33291a;
+}
+
+.scale-row {
+  display: grid;
+  grid-template-columns: 36px minmax(112px, 130px) 1fr 72px;
+  align-items: center;
+  gap: 9px;
+  margin: 8px 0;
+}
+
+.scale-row > strong {
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 20px;
+  font-weight: 400;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.scale-row > strong.dim {
+  color: #7a715a;
+  text-shadow: none;
+}
+
+.scale-row span {
+  font-size: 10px;
+}
+
+.segments {
+  display: flex;
+  gap: 4px;
+}
+
+.segments i {
+  flex: 1;
+  height: 9px;
+  border-radius: 2px;
+  background: #241f17;
+}
+
+.segments i.lit {
+  background: linear-gradient(180deg, #ffb64d, #e8902f);
+  box-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.scale-row em {
+  color: #cdbf9f;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-style: normal;
+  text-align: right;
+}
+
+.prob-footer {
+  margin-top: auto;
+  padding: 13px 14px 14px;
+  border-top: 1px solid #33291a;
+  background: rgba(10, 8, 4, .45);
+}
+
+.prob-footer h3 {
+  margin: 0 0 9px;
+  font-size: 11px;
+}
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 38px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.prob-row span {
+  color: #a99b7e;
+  font-size: 11px;
+}
+
+.prob-row div {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #1a1610;
+}
+
+.prob-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e8902f, #ffb64d);
+  box-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.prob-row strong {
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: right;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+@media (max-width: 520px) {
+  .scale-row {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .segments,
+  .scale-row em {
+    grid-column: 2;
+  }
 }
 </style>

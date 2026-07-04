@@ -90,6 +90,8 @@ const defaultSettings = reactive({
     activeTab: 'settings',
     
     appName: 'SkyDash',
+    callsign: 'W8BE',
+    grid: 'DM04',
   },
 })
 

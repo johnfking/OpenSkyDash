@@ -1,46 +1,76 @@
 <template>
   <v-app class="sky-app">
-    <v-app-bar class="top-bar" density="compact" flat>
-      <v-app-bar-title class="app-title"><v-icon icon="mdi-monitor-dashboard" color="cyan-lighten-2"
-          size="small"></v-icon> {{ stg?.ui?.appName || 'SkyDash' }}</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <div class="clock-chip">{{ currentTime }}</div>
-    </v-app-bar>
-
     <v-main class="dashboard-main">
-      <v-card class="dashboard-shell mx-auto" elevation="0">
+      <section class="console-shell">
+        <span class="screw screw-tl"></span>
+        <span class="screw screw-tr"></span>
+        <span class="screw screw-bl"></span>
+        <span class="screw screw-br"></span>
 
-        <v-tabs v-model="stg.ui.activeTab" class="dashboard-tabs" selected-class="active-tab" grow density="compact">
-          <v-tab value="weather" class="tab-button">
-            <template v-slot:prepend>
-              <v-icon :icon="shared.weather.icon" color="cyan-lighten-2" size="small" class="mr-1"></v-icon>
-            </template>
-          </v-tab>
-          <v-tab value="lightning" class="tab-button"><v-icon icon="mdi-flash" color="amber-lighten-2" size="small" class="mr-1"
-              :class="{ 'pulsing-icon': (stg?.lightning?.currentStorm?.frequency > 0) }">
-            </v-icon></v-tab>
-          <v-tab value="solar" class="tab-button"><v-icon icon="mdi-sun-wireless" color="orange-lighten-2" size="small" class="mr-1"
-              :class="{ 'pulsing-icon-solar': (stg?.solar?.current?.scales?.current.g > 0 || stg?.solar?.current?.scales?.current?.r > 0 || stg?.solar?.current?.scales?.current?.s > 0) }">
-            </v-icon></v-tab>
-          <v-tab value="settings" class="tab-button"><v-icon icon="mdi-cog" color="grey-lighten-2" size="small">
-            </v-icon></v-tab>
-        </v-tabs>
-        <v-window v-model="stg.ui.activeTab" :touch="false" :transition="false">
-          <v-window-item value="weather" eager>
-            <WeatherCard v-show="stg.ui.activeTab === 'weather'" :stg="stg" />
-          </v-window-item>
-          <v-window-item v-show="stg.ui.activeTab === 'lightning'" value="lightning" eager>
+        <header class="nameplate">
+          <div class="logo-mark" aria-hidden="true">
+            <span></span>
+          </div>
+
+          <div class="brand-block">
+            <h1><span>SKY</span><strong>DASH</strong></h1>
+            <p>SW-1 · STATION MONITOR</p>
+          </div>
+
+          <div class="station-badges">
+            <div class="badge-cell">
+              <span>CALLSIGN</span>
+              <strong>{{ stg.ui.callsign || 'W8BE' }}</strong>
+            </div>
+            <div class="badge-cell">
+              <span>GRID</span>
+              <strong>{{ stg.ui.grid || 'DM04' }}</strong>
+            </div>
+          </div>
+
+          <div class="header-spacer"></div>
+
+          <div class="clock-stack">
+            <div class="clock-readout">{{ currentTime }}</div>
+            <div class="utc-line">
+              <span>LOCAL</span>
+              <strong>{{ utcTime }}</strong>
+            </div>
+          </div>
+
+          <div class="power-indicator">
+            <span></span>
+            <strong>PWR</strong>
+          </div>
+        </header>
+
+        <nav class="channel-nav" aria-label="Dashboard sections">
+          <a href="#weather"><span class="dot weather-dot"></span>WEATHER</a>
+          <a href="#lightning"><span class="dot lightning-dot"></span>LIGHTNING</a>
+          <a href="#solar"><span class="dot solar-dot"></span>SOLAR</a>
+          <a href="#settings"><span class="dot config-dot"></span>CONFIG</a>
+        </nav>
+
+        <div class="panel-grid">
+          <section id="lightning" class="panel-slot panel-hero">
             <LightningCard :stg="stg" />
-          </v-window-item>
-          <v-window-item value="solar" eager>
-            <SolarCard v-show="stg.ui.activeTab === 'solar'" :stg="stg" />
-          </v-window-item>
-          <v-window-item value="settings" eager>
-            <SettingsCard v-if="stg.ui.activeTab === 'settings'" :stg="stg"
-              @update-distance="(val) => stg.units.distance = val" />
-          </v-window-item>
-        </v-window>
-      </v-card>
+          </section>
+          <section id="solar" class="panel-slot panel-hero">
+            <SolarCard :stg="stg" />
+          </section>
+          <section id="weather" class="panel-slot panel-secondary">
+            <WeatherCard :stg="stg" />
+          </section>
+          <section id="settings" class="panel-slot panel-secondary">
+            <SettingsCard :stg="stg" />
+          </section>
+        </div>
+
+        <footer class="console-footer">
+          <p>DATA · OPEN-METEO · BLITZORTUNG · NOAA SWPC · KC2G</p>
+          <p>SKYDASH · MIT LICENSE</p>
+        </footer>
+      </section>
     </v-main>
   </v-app>
 </template>
@@ -48,13 +78,11 @@
 <script>
 import { reactive } from 'vue';
 import { settings } from './components/cards/dashboardSettings.js';
-import '@mdi/font/css/materialdesignicons.css';
 
 import LightningCard from './components/cards/LightningCard.vue';
 import SolarCard from './components/cards/SolarCard.vue';
 import WeatherCard from './components/cards/WeatherCard.vue';
 import SettingsCard from './components/cards/SettingsCard.vue';
-
 
 export default {
   components: {
@@ -66,33 +94,17 @@ export default {
   data() {
     const masterState = reactive(settings);
 
-
     if (!masterState.weather) masterState.weather = {};
     if (!masterState.weather.current) masterState.weather.current = {};
+    if (!masterState.ui) masterState.ui = {};
+    if (!masterState.ui.callsign) masterState.ui.callsign = 'W8BE';
+    if (!masterState.ui.grid) masterState.ui.grid = 'DM04';
 
     return {
       stg: masterState,
-
-
-      shared: new Proxy(masterState, {
-        get(target, prop) {
-
-          if (prop === 'weatherIcon') return target.weather.current.weatherIcon;
-          return target[prop];
-        },
-        set(target, prop, value) {
-
-          if (prop === 'weatherIcon') {
-            target.weather.current.weatherIcon = value;
-            return true;
-          }
-          target[prop] = value;
-          return true;
-        }
-      }),
-
-      activeTab: 'weather',
       currentTime: '',
+      utcTime: '',
+      clockTimer: null,
     };
   },
   created() {
@@ -101,16 +113,12 @@ export default {
       try {
         const parsed = JSON.parse(savedSettings);
 
-
         if (parsed.lightning) {
-
           Object.assign(this.stg.lightning, parsed.lightning);
-
 
           if (parsed.lightning.ui) {
             Object.assign(this.stg.lightning.ui, parsed.lightning.ui);
           }
-
 
           if (parsed.lightning.homeLocation) {
             this.stg.lightning.homeLocation.lat = parseFloat(parsed.lightning.homeLocation.lat) || 34.05;
@@ -118,187 +126,341 @@ export default {
           }
         }
 
-        if (parsed.units) {
-          Object.assign(this.stg.units, parsed.units);
-        }
-
-        if (parsed.ui) {
-          Object.assign(this.stg.ui, parsed.ui);
-        }
-
-        if (parsed.solar) {
-          Object.assign(this.stg.solar, parsed.solar);
-        }
-
-        if (parsed.weather) {
-          Object.assign(this.stg.weather, parsed.weather);
-        }
-
-        // console.log("App.vue (created): All configurations successfully restored from storage.");
+        if (parsed.units) Object.assign(this.stg.units, parsed.units);
+        if (parsed.ui) Object.assign(this.stg.ui, parsed.ui);
+        if (parsed.solar) Object.assign(this.stg.solar, parsed.solar);
+        if (parsed.weather) Object.assign(this.stg.weather, parsed.weather);
       } catch (e) {
-        console.error("App.vue: Error pre-parsing saved settings", e);
+        console.error('App.vue: Error pre-parsing saved settings', e);
       }
     }
   },
   mounted() {
-
     this.updateClock();
-    setInterval(this.updateClock, 1000);
-
-
+    this.clockTimer = setInterval(this.updateClock, 1000);
     window.G_STATE = this.stg;
-
-    this.stg.ui.activeTab = 'weather';
   },
-
+  beforeUnmount() {
+    if (this.clockTimer) clearInterval(this.clockTimer);
+  },
   methods: {
     updateClock() {
-
-      const currentLocale = this.stg.units.time?.toLowerCase();
-      const timeFormat = this.stg.units.timeFormat;
-
-
-
-      const use12Hour = String(timeFormat) === '12';
-
       const now = new Date();
+      const use12Hour = String(this.stg.units.timeFormat) === '12';
 
-      if (currentLocale === 'locale') {
+      this.currentTime = now.toLocaleTimeString(undefined, {
+        hour12: use12Hour,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
 
-
-        this.currentTime = now.toLocaleTimeString(undefined, {
-          hour12: use12Hour
-        });
-
-      } else if (currentLocale === 'utc') {
-
-        this.currentTime = now.toLocaleString('en-US', {
-          timeZone: 'UTC',
-          year: '2-digit',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: use12Hour,
-          timeZoneName: 'short'
-        });
-      }
-    }
+      this.utcTime = now.toLocaleTimeString('en-US', {
+        timeZone: 'UTC',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short',
+      });
+    },
   },
   watch: {
     stg: {
       handler(newSettings) {
-
         localStorage.setItem('station_config_v1', JSON.stringify(newSettings));
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
 };
 </script>
 
 <style scoped>
 .sky-app {
-  background:
-    radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.2), transparent 30%),
-    radial-gradient(circle at 80% 0%, rgba(249, 115, 22, 0.16), transparent 28%),
-    linear-gradient(180deg, #0f172a 0%, #111827 48%, #0b1120 100%);
-  color: #e5eefb;
-}
-
-.top-bar {
-  background: rgba(15, 23, 42, 0.76) !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  backdrop-filter: blur(14px);
-}
-
-.app-title {
-  color: #e2e8f0;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
-
-.clock-chip {
-  margin-right: 14px;
-  padding: 4px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.72);
-  color: #cbd5e1;
-  font-size: 0.86rem;
-  font-weight: 700;
+  min-height: 100dvh;
+  background: radial-gradient(120% 90% at 50% -10%, #26221b 0%, #14110c 55%, #0c0a07 100%);
+  color: #f1e7d3;
+  font-family: 'Barlow', system-ui, sans-serif;
 }
 
 .dashboard-main {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   min-height: 100dvh;
-  padding: 66px 12px 28px;
+  padding: clamp(14px, 3vw, 36px);
 }
 
-.dashboard-shell {
-  width: min(352px, calc(100vw - 24px));
+.console-shell {
+  position: relative;
+  width: min(1360px, 100%);
+  margin: 0 auto;
+  padding: clamp(14px, 3vw, 36px);
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 22px;
-  background: rgba(15, 23, 42, 0.9);
-  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.38);
+  border: 1px solid #4c4130;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #2b261d 0%, #211c15 44%, #191510 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 228, 170, .10),
+    inset 0 0 0 1px rgba(0, 0, 0, .4),
+    0 34px 90px rgba(0, 0, 0, .62);
 }
 
-.dashboard-tabs {
-  margin: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 16px;
-  background: rgba(2, 6, 23, 0.36);
-  overflow: hidden;
+.screw {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7a6c52, #2c2519 70%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .18), 0 1px 2px rgba(0, 0, 0, .7);
 }
 
-.tab-button {
-  min-width: 0;
-  color: #94a3b8;
+.screw-tl { top: 12px; left: 12px; }
+.screw-tr { top: 12px; right: 12px; }
+.screw-bl { bottom: 12px; left: 12px; }
+.screw-br { bottom: 12px; right: 12px; }
+
+.nameplate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid #3a3122;
 }
 
-:deep(.active-tab) {
-  background: rgba(56, 189, 248, 0.12);
-  color: #e0f2fe !important;
+.logo-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #58492f;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #312a1f, #1c180f);
 }
 
-.pulsing-icon {
-  animation: pulse-lightning 1.5s infinite ease-in-out;
-  display: inline-block;
+.logo-mark span {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #ffb64d;
+  box-shadow: 0 0 10px rgba(255, 182, 77, .4);
 }
 
-.pulsing-icon-solar {
-  animation: pulse-lightning 10s infinite ease-in-out;
-  display: inline-block;
+.logo-mark span::after {
+  position: absolute;
+  right: 3px;
+  bottom: 4px;
+  width: 10px;
+  height: 3px;
+  background: #ffb64d;
+  content: '';
 }
 
-@keyframes pulse-lightning {
-  0% {
-    transform: scale(1);
-    filter: brightness(1) drop-shadow(0 0 0px rgba(255, 193, 7, 0));
+.brand-block h1 {
+  margin: 0;
+  color: #f1e7d3;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  line-height: .95;
+}
+
+.brand-block h1 strong {
+  color: #ffb64d;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.brand-block p,
+.utc-line span,
+.power-indicator strong {
+  margin: 0;
+  color: #7d7259;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .32em;
+}
+
+.station-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge-cell {
+  min-width: 78px;
+  padding: 7px 10px;
+  border: 1px solid #4a3f2c;
+  border-radius: 9px;
+  background: #14110b;
+}
+
+.badge-cell span {
+  display: block;
+  color: #6f654e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .24em;
+}
+
+.badge-cell strong {
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 17px;
+  font-weight: 400;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+}
+
+.header-spacer {
+  flex: 1 1 120px;
+}
+
+.clock-stack {
+  text-align: right;
+}
+
+.clock-readout {
+  color: #ffb64d;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 30px;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 150, 40, .35);
+  animation: flick 5s infinite;
+}
+
+.utc-line {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.utc-line strong {
+  color: #948a70;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.power-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.power-indicator span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #8fe06a;
+  box-shadow: 0 0 10px rgba(143, 224, 106, .75);
+}
+
+.channel-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 0;
+}
+
+.channel-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #4a3f2c;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #2a2419, #181309);
+  color: #c9b89a;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-decoration: none;
+  transition: .14s ease;
+}
+
+.channel-nav a:hover {
+  border-color: #ffb64d;
+  color: #ffce9a;
+  box-shadow: 0 0 16px rgba(255, 150, 40, .18);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.weather-dot { background: #7ec8ff; }
+.lightning-dot { background: #ff5a3c; }
+.solar-dot { background: #ffb64d; }
+.config-dot { background: #b8ab8d; }
+
+.panel-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.panel-slot {
+  display: flex;
+  min-width: 300px;
+}
+
+.panel-slot > * {
+  width: 100%;
+}
+
+.panel-hero {
+  flex: 2 1 460px;
+}
+
+.panel-secondary {
+  flex: 1 1 340px;
+}
+
+.console-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #3a3122;
+  text-align: center;
+}
+
+.console-footer p {
+  margin: 2px 0;
+  color: #615843;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .2em;
+}
+
+@keyframes flick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .88; }
+}
+
+@media (max-width: 640px) {
+  .nameplate {
+    align-items: flex-start;
   }
 
-  50% {
-    transform: scale(1.2);
-    filter: brightness(1.8) drop-shadow(0 0 5px rgba(255, 193, 7, 0.8));
+  .header-spacer {
+    display: none;
   }
 
-  100% {
-    transform: scale(1);
-    filter: brightness(1) drop-shadow(0 0 0px rgba(255, 193, 7, 0));
+  .clock-stack {
+    width: 100%;
+    text-align: left;
   }
-}
 
-
-html,
-body,
-#app,
-.v-application {
-  min-height: 100dvh !important;
-  height: 100dvh !important;
-  overflow-y: auto !important;
+  .utc-line {
+    justify-content: flex-start;
+  }
 }
 </style>
