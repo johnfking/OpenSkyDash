@@ -15,6 +15,7 @@
           <div class="brand-block">
             <h1><span>SKY</span><strong>DASH</strong></h1>
             <p>SW-1 · STATION MONITOR</p>
+            <p class="author-credit">BY MICK, W8BE</p>
           </div>
 
           <div class="station-badges">
@@ -286,6 +287,13 @@ export default {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .32em;
+}
+
+.brand-block .author-credit {
+  margin-top: 2px;
+  color: #9f8f70;
+  font-size: 8px;
+  letter-spacing: .18em;
 }
 
 .station-badges {
