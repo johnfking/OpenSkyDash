@@ -105,7 +105,7 @@ export default {
   mounted() {
     window.lightningCard = this;
     this.connect();
-    this.thunderAudio = new Audio('/sounds/thunder.mp3');
+    this.thunderAudio = this.createThunderAudio();
     this.updateFrequency();
     this.trendTimer = setInterval(this.calculateTrend, 5000);
     this.freqTimer = setInterval(this.updateFrequency, 10000);
@@ -396,9 +396,15 @@ export default {
     },
     playThunder() {
       if (this.stg.lightning.isMuted) return;
-      if (!this.thunderAudio) this.thunderAudio = new Audio('/sounds/thunder.mp3');
+      if (!this.thunderAudio) this.thunderAudio = this.createThunderAudio();
       this.thunderAudio.currentTime = 0;
       this.thunderAudio.play().catch(() => {});
+    },
+    createThunderAudio() {
+      const audio = new Audio('/sounds/lightning-ping.wav');
+      audio.volume = 0.35;
+      audio.preload = 'auto';
+      return audio;
     },
     formatDistance(rawDistance, allowDecimal = false) {
       if (rawDistance === undefined || rawDistance === null) return '--';
