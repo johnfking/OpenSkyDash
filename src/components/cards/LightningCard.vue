@@ -666,10 +666,15 @@ h2 {
 
 .home-marker span {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
   border: 1px solid #7dffb0;
   border-radius: 50%;
   animation: ping 2.4s ease-out infinite;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
 }
 
 .compass {
