@@ -198,7 +198,7 @@ export default {
   position: relative;
   width: min(1360px, 100%);
   margin: 0 auto;
-  padding: clamp(14px, 3vw, 36px);
+  padding: clamp(22px, 3vw, 36px);
   overflow: hidden;
   border: 1px solid #4c4130;
   border-radius: 24px;
@@ -228,7 +228,7 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  padding: 0 0 18px;
+  padding: 4px 22px 18px 0;
   border-bottom: 1px solid #3a3122;
 }
 
